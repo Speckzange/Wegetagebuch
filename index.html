@@ -69,7 +69,7 @@ button { cursor: pointer; }
 .mini.platz { visibility: hidden; }
 
 /* Tagesnavigation: Wischen schiebt die Seiten mit dem Finger, Tippen wechselt den Tag, Tippen aufs Datum öffnet den Kalender, Doppeltippen springt zu heute */
-.tagkopf { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 2px; }
+.tagkopf { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0 10px; margin: -8px 0 -10px; position: sticky; top: 0; z-index: 5; background: var(--bg); }
 .tagkopf .wd { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 /* Datum als deutlicher Knopf: Kalender-Symbol, Datum, Pfeil nach unten */
 .daypick { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 8px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); user-select: none; -webkit-user-select: none; }
@@ -78,7 +78,7 @@ button { cursor: pointer; }
 .daypick .pfeil { width: 7px; height: 7px; margin: -4px 2px 0 2px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); }
 @media (prefers-reduced-motion: no-preference) { .daypick { transition: transform 0.12s ease; } .daypick:active { transform: scale(0.97); } }
 
-.pager { flex: 1; display: flex; margin: 0 -16px; overflow: hidden; touch-action: pan-y; }
+.pager { flex: 1; display: flex; margin: 0 -16px; overflow: hidden; overflow: clip; touch-action: pan-y; }   /* clip statt hidden, sonst bleibt der Tageskopf nicht oben stehen */
 .track { flex: none; display: flex; align-items: flex-start; width: 300%; transform: translateX(-33.3333%); }
 .seite { width: 33.3333%; padding: 0 16px; display: flex; flex-direction: column; gap: 18px; }
 .seite.neben { max-height: 100vh; overflow: hidden; }
@@ -93,6 +93,11 @@ dialog.kal { height: fit-content; max-width: 360px; margin: auto; border-radius:
 .kal-tag { position: relative; height: 42px; border: 0; border-radius: 10px; background: none; color: var(--ink); font-variant-numeric: tabular-nums; }
 .kal-tag:disabled { color: var(--muted); opacity: 0.4; }
 .kal-kopf button:disabled { opacity: 0.25; }
+dialog.menue { height: fit-content; max-width: 340px; margin: auto auto calc(16px + env(safe-area-inset-bottom, 0px)); border-radius: 18px; background: var(--surface); padding: 6px; }
+.menue-titel { padding: 10px 12px 8px; font-size: 0.85rem; color: var(--muted); text-align: center; border-bottom: 1px solid var(--line); }
+.menue button { display: block; width: 100%; border: 0; background: none; color: var(--ink); text-align: center; padding: 14px; font-size: 1rem; font-weight: 500; border-radius: 12px; }
+.menue button + button { border-top: 1px solid var(--line); border-radius: 0; }
+.menue button.abbrechen { margin-top: 6px; border-top: 0; background: var(--bg); border-radius: 12px; font-weight: 600; }
 .kal-tag.heute { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .kal-tag[aria-current="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .kal-tag i { position: absolute; left: 50%; bottom: 5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--accent); }
@@ -266,9 +271,16 @@ legend { padding: 0; margin-bottom: 8px; }
 <div class="auswahl-info" id="auswahl-info" hidden aria-live="polite"></div>
 <div class="dock auswahl-dock" id="auswahl-dock" hidden>
   <button class="fab second" id="auswahl-abbrechen">Abbrechen</button>
-  <button class="fab second" id="auswahl-kopieren">Auf heute</button>
+  <button class="fab second" id="auswahl-kopieren">Kopieren</button>
   <button class="fab rot" id="auswahl-loeschen">Löschen</button>
 </div>
+<dialog class="menue" id="dlg-kopie" aria-labelledby="kopie-titel">
+  <div class="menue-titel" id="kopie-titel"></div>
+  <button type="button" id="kopie-heute">Auf heute</button>
+  <button type="button" id="kopie-tag"></button>
+  <button type="button" id="kopie-datum">Anderes Datum …</button>
+  <button type="button" id="kopie-abbrechen" class="abbrechen">Abbrechen</button>
+</dialog>
 <div class="toast" id="toast" role="status" hidden><span id="toast-text"></span><button type="button" id="toast-aktion"></button></div>
 
 
@@ -450,9 +462,9 @@ legend { padding: 0; margin-bottom: 8px; }
     const f = [];
     if (!w.start || !w.ankunft) f.push("Zeit");
     if (!w.zweck) f.push("Zweck");
-    const e = (w.etappen || [])[0];
-    if (!e || !e.vm) f.push("Verkehrsmittel");
-    if (!e || !e.m) f.push("Wegelänge");
+    const et = w.etappen || [];
+    if (!et.length || et.some((e) => !e.vm)) f.push("Verkehrsmittel");
+    if (!et.length || et.some((e) => !e.m)) f.push("Wegelänge");   // jede Etappe braucht ihre Länge
     return f;
   }
   function vollstaendig(w) { return !fehlt(w).length; }
@@ -465,11 +477,12 @@ legend { padding: 0; margin-bottom: 8px; }
   const PIKTO = {
     fuss:   { farbe: "#4cc39a", svg: '<circle cx="13.5" cy="4.2" r="1.9"/><path d="M12.8 8.2L11.3 14"/><path d="M11.3 14L8.3 20.5"/><path d="M11.3 14l3 2.6.8 3.9"/><path d="M12.6 9l-3.4 2.2-.8 2.8"/><path d="M12.6 9l2.4 2.6 2.8.9"/>' },
     rad:    { farbe: "#6ea8e6", svg: '<circle cx="6" cy="16" r="3.6"/><circle cx="18" cy="16" r="3.6"/><path d="M6 16l3.5-7h6L18 16"/><path d="M12 16l-2.5-7M8 6.5h3M15 9l-1-3h2.5"/>' },
-    tram:   { farbe: "#f2c94c", svg: '<path d="M4.5 9.5h15l2 7.5h-19z"/><path d="M12 2.5l3.3 3.5L12 9.5 8.7 6z"/><path d="M6.3 12h2.7v2.5H6.3zM10.65 12h2.7v2.5h-2.7zM15 12h2.7v2.5H15z"/><circle cx="6" cy="19.8" r="1"/><circle cx="9" cy="19.8" r="1"/><circle cx="15" cy="19.8" r="1"/><circle cx="18" cy="19.8" r="1"/>' },
-    zug:    { farbe: "#f06a6a", svg: '<path d="M3 16V7h6v9"/><path d="M2 6.5h8"/><path d="M5 9.5h2v2.5H5z"/><path d="M9 10h9.5a1.5 1.5 0 0 1 1.5 1.5V16H3"/><path d="M15 10V6.5M13.8 5.5h2.4"/><path d="M20 16l1.8 2.5"/><circle cx="6" cy="18.6" r="2.2"/><circle cx="12" cy="18.6" r="2.2"/><circle cx="17" cy="18.6" r="1.5"/>' },
-    bus:    { farbe: "#b98ae0", svg: '<rect x="4.5" y="3.5" width="15" height="15" rx="2.5"/><path d="M4.5 11h15M4.5 7h15M8 15h.01M16 15h.01M7 18.5V21M17 18.5V21"/>' },
-    auto:   { farbe: "#9aa8a2", svg: '<path d="M4 16v-3.5l2-5a2 2 0 0 1 1.9-1.3h8.2a2 2 0 0 1 1.9 1.3l2 5V16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 12.5h16M7.5 14.5h.01M16.5 14.5h.01M6 17v2M18 17v2"/>' },
-    moped:  { farbe: "#c08a5a", svg: '<path d="M2 15.5c0-3.8 2.4-5.7 6-5.7 3 0 4.5 1.8 4.8 4"/><path d="M4 7.8h7M5 7.8v2"/><path d="M2 15.5h7.5l3 1h4.5"/><path d="M17 16.5c.6-2.3 2.4-3.2 5-3.2"/><path d="M21 13.3c-.8-3.3-2.5-5.8-4.5-7.8"/><path d="M14 6.6l4.5-2"/><circle cx="6" cy="18.6" r="1.9"/><circle cx="19.5" cy="18.6" r="1.9"/>' },
+    tram:   { farbe: "#c08a5a", svg: '<path d="M4.5 9.5h15l2 7.5h-19z"/><path d="M12 2.5l3.3 3.5L12 9.5 8.7 6z"/><path d="M6.3 12h2.7v2.5H6.3zM10.65 12h2.7v2.5h-2.7zM15 12h2.7v2.5H15z"/><circle cx="6" cy="19.8" r="1"/><circle cx="9" cy="19.8" r="1"/><circle cx="15" cy="19.8" r="1"/><circle cx="18" cy="19.8" r="1"/>' },
+    zug:    { farbe: "#e27fd0", svg: '<path d="M3 16V7h6v9"/><path d="M2 6.5h8"/><path d="M5 9.5h2v2.5H5z"/><path d="M9 10h9.5a1.5 1.5 0 0 1 1.5 1.5V16H3"/><path d="M15 10V6.5M13.8 5.5h2.4"/><path d="M20 16l1.8 2.5"/><circle cx="6" cy="18.6" r="2.2"/><circle cx="12" cy="18.6" r="2.2"/><circle cx="17" cy="18.6" r="1.5"/>' },
+    bus:    { farbe: "#8b7cf0", svg: '<rect x="4.5" y="3.5" width="15" height="15" rx="2.5"/><path d="M4.5 11h15M4.5 7h15M8 15h.01M16 15h.01M7 18.5V21M17 18.5V21"/>' },
+    auto:   { farbe: "#d9463f", svg: '<path d="M4 16v-3.5l2-5a2 2 0 0 1 1.9-1.3h8.2a2 2 0 0 1 1.9 1.3l2 5V16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 12.5h16M7.5 14.5h.01M16.5 14.5h.01M6 17v2M18 17v2"/>' },
+    moped:  { farbe: "#f07a6a", svg: '<path d="M2 15.5c0-3.8 2.4-5.7 6-5.7 3 0 4.5 1.8 4.8 4"/><path d="M4 7.8h7M5 7.8v2"/><path d="M2 15.5h7.5l3 1h4.5"/><path d="M17 16.5c.6-2.3 2.4-3.2 5-3.2"/><path d="M21 13.3c-.8-3.3-2.5-5.8-4.5-7.8"/><path d="M14 6.6l4.5-2"/><circle cx="6" cy="18.6" r="1.9"/><circle cx="19.5" cy="18.6" r="1.9"/>' },
+    taxi:   { farbe: "#f2c94c", svg: '<path d="M4 17v-3.5l2-4.6a2 2 0 0 1 1.9-1.3h8.2a2 2 0 0 1 1.9 1.3l2 4.6V17a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 13.5h16M7.5 15.5h.01M16.5 15.5h.01"/><rect x="9" y="3.5" width="6" height="3" rx=".7"/>' },
     andere: { farbe: "#9aa8a2", svg: '<circle cx="12" cy="12" r="7.5"/><path d="M9 12h6M13 9.5l2.5 2.5-2.5 2.5"/>' },
   };
   // Reihenfolge zählt: „Motorrad“ ist ein Moped, kein Fahrrad; „Stadtbahn“ keine Eisenbahn.
@@ -479,7 +492,8 @@ legend { padding: 0; margin-bottom: 8px; }
     ["rad", /rad|bike|velo/],
     ["zug", /zug|bahn|ice\b|regio|\bre\b|\brb\b/],
     ["bus", /bus/],
-    ["auto", /auto|pkw|car|taxi/],
+    ["taxi", /taxi/],
+    ["auto", /auto|pkw|car/],
     ["fuss", /fu(ß|ss)|gehen|laufen|gelaufen/],
   ];
   function pikto(vm) {
@@ -767,16 +781,31 @@ legend { padding: 0; margin-bottom: 8px; }
   function auswahlBeenden() { auswahl.clear(); auswahlZeigen(); }
   $("auswahl-abbrechen").addEventListener("click", auswahlBeenden);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && auswahl.size && !document.querySelector("dialog[open]")) auswahlBeenden(); });
+  // Kopieren: Ziel wählen – heute, der angezeigte Tag oder ein Datum aus dem Kalender
   $("auswahl-kopieren").addEventListener("click", () => {
+    const n = auswahl.size;
+    $("kopie-titel").textContent = n === 1 ? "Weg kopieren" : `${n} Wege kopieren`;
+    $("kopie-tag").hidden = tag === heute();
+    $("kopie-tag").textContent = `Auf diesen Tag (${new Date(tag + "T12:00").toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" })})`;
+    $("dlg-kopie").showModal();
+  });
+  function kopieren(ziel) {
+    $("dlg-kopie").close();
     const kopien = sortiert(wege.filter((w) => auswahl.has(w.id)))
-      .map((w, k) => ({ ...w, id: neueId(), datum: heute(), etappen: (w.etappen || []).map((e) => ({ ...e })), erstellt: Date.now() + k }));
+      .map((w, k) => ({ ...w, id: neueId(), datum: ziel, etappen: (w.etappen || []).map((e) => ({ ...e })), erstellt: Date.now() + k }));
     auswahl.clear();
-    tag = heute();
+    tag = ziel;   // zum Zieltag springen, damit man die Kopie sieht
     kopien.forEach(wegSichern);
     auswahlZeigen();
-    toast(kopien.length === 1 ? "Weg auf heute kopiert" : `${kopien.length} Wege auf heute kopiert`,
+    const wohin = ziel === heute() ? "heute" : `den ${new Date(ziel + "T12:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}`;
+    toast(`${kopien.length === 1 ? "Weg" : kopien.length + " Wege"} auf ${wohin} kopiert`,
       { text: "Rückgängig", fn: () => kopien.forEach((k) => wegLoeschen(k.id)) });
-  });
+  }
+  $("kopie-heute").addEventListener("click", () => kopieren(heute()));
+  $("kopie-tag").addEventListener("click", () => kopieren(tag));
+  $("kopie-datum").addEventListener("click", () => { $("dlg-kopie").close(); kalenderOeffnen(kopieren); });
+  $("kopie-abbrechen").addEventListener("click", () => $("dlg-kopie").close());
+  $("dlg-kopie").addEventListener("click", (e) => { if (e.target === $("dlg-kopie")) $("dlg-kopie").close(); });
   $("auswahl-loeschen").addEventListener("click", () => {
     const weg = wege.filter((w) => auswahl.has(w.id));
     auswahl.clear();
@@ -831,7 +860,7 @@ legend { padding: 0; margin-bottom: 8px; }
 
   // Zwecke und Verkehrsmittel: feste Vorauswahl, eigene Einträge und alles, was schon in Wegen vorkommt – alphabetisch.
   const ZWECKE = ["Uni", "nach Hause", "Einkaufen", "Essen"];
-  const VERKEHRSMITTEL = ["zu Fuß", "Tram", "Fahrrad", "Zug", "Bus", "Auto", "Moped"];
+  const VERKEHRSMITTEL = ["zu Fuß", "Tram", "Fahrrad", "Zug", "Bus", "Auto", "Taxi", "Moped"];
   const alphabetisch = (liste) => [...new Set(liste.filter(Boolean))].sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
   function zweckListe() {
     return alphabetisch([...ZWECKE, ...(settings.zwecke || []), ...wege.map((w) => w.zweck)]);
@@ -857,9 +886,8 @@ legend { padding: 0; margin-bottom: 8px; }
   const MUELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 1.8h7a2 2 0 0 0 2-1.8l1-12M9 7V4.8A.8.8 0 0 1 9.8 4h4.4a.8.8 0 0 1 .8.8V7"/></svg>';
   const GRIFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
 
-  // Feste Verkehrsmittel mit Piktogramm; alles andere läuft über „Sonstige“
-  const VM_KNOEPFE = [["zu Fuß", "fuss"], ["Fahrrad", "rad"], ["Tram", "tram"], ["Bus", "bus"], ["Zug", "zug"], ["Auto", "auto"], ["Moped", "moped"]];
-  const SONSTIGE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 12h.01M12 12h.01M18 12h.01" stroke-width="3"/></svg>';
+  // Feste Verkehrsmittel mit Piktogramm. Ältere eigene Einträge bleiben als Textfeld sichtbar, bis man eine Kachel wählt.
+  const VM_KNOEPFE = [["zu Fuß", "fuss"], ["Fahrrad", "rad"], ["Tram", "tram"], ["Bus", "bus"], ["Zug", "zug"], ["Auto", "auto"], ["Taxi", "taxi"], ["Moped", "moped"]];
 
   function legsZeichnen() {
     const box = $("legs");
@@ -900,25 +928,25 @@ legend { padding: 0; margin-bottom: 8px; }
       const wahl = document.createElement("div"); wahl.className = "vm-wahl"; wahl.id = `f-vm-${i}`;
       wahl.setAttribute("role", "radiogroup"); wahl.setAttribute("aria-label", "Verkehrsmittel");
       const standard = VM_KNOEPFE.map(([n]) => n);
-      const knoepfe = [...VM_KNOEPFE, ["Sonstige", null]].map(([name, key]) => {
+      const knoepfe = VM_KNOEPFE.map(([name, key]) => {
         const k = document.createElement("button"); k.type = "button"; k.className = "vm-knopf";
-        k.dataset.vm = key ? name : ANDERE; k.setAttribute("role", "radio");
-        const p = key ? PIKTO[key] : PIKTO.andere;
+        k.dataset.vm = name; k.setAttribute("role", "radio");
+        const p = PIKTO[key];
         k.style.setProperty("--c", p.farbe);
-        k.innerHTML = `<span class="ic">${key ? piktoSvg(p) : SONSTIGE_SVG}</span>`;
+        k.innerHTML = `<span class="ic">${piktoSvg(p)}</span>`;
         k.append(name);
         wahl.append(k);
         return k;
       });
       let sonstige = !!leg.vm && !standard.includes(leg.vm);
       const wahlZeigen = () => knoepfe.forEach((k) => {
-        const an = k.dataset.vm === ANDERE ? sonstige : (!sonstige && k.dataset.vm === leg.vm);
+        const an = !sonstige && k.dataset.vm === leg.vm;
         k.classList.toggle("an", an); k.setAttribute("aria-checked", an);
       });
 
-      // Sonstige: freier Name, eigene frühere Einträge werden vorgeschlagen
+      // Älterer eigener Eintrag (z. B. „E-Scooter“): bleibt änderbar
       const f2 = document.createElement("label"); f2.className = "field";
-      const s2 = document.createElement("span"); s2.textContent = "Sonstiges";
+      const s2 = document.createElement("span"); s2.textContent = "Eigenes";
       const frei = document.createElement("input"); frei.type = "text"; frei.id = `f-vmfrei-${i}`; frei.placeholder = "z. B. E-Scooter"; frei.autocomplete = "off";
       const dl = document.createElement("datalist"); dl.id = `vm-vorschlaege-${i}`;
       dl.append(...vmListe().filter((v) => !standard.includes(v)).map((v) => new Option(v)));
@@ -940,11 +968,10 @@ legend { padding: 0; margin-bottom: 8px; }
 
       wahl.addEventListener("click", (e) => {
         const k = e.target.closest(".vm-knopf"); if (!k) return;
-        sonstige = k.dataset.vm === ANDERE;
-        f2.hidden = !sonstige;
-        leg.vm = sonstige ? frei.value.trim() : k.dataset.vm;
+        sonstige = false;
+        f2.hidden = true;
+        leg.vm = k.dataset.vm;
         wahlZeigen(); piktoZeigen(); pruefen();
-        if (sonstige) frei.focus();
       });
       frei.addEventListener("input", () => { leg.vm = frei.value.trim(); piktoZeigen(); pruefen(); });
 
@@ -1095,9 +1122,8 @@ legend { padding: 0; margin-bottom: 8px; }
   });
   $("weg-cancel").addEventListener("click", () => $("dlg-weg").close());
 
-  // Zurückwischen: das Formular folgt dem Finger nach rechts; weit genug oder schnell genug schließt es wie „Abbrechen“.
-  (() => {
-    const dlg = $("dlg-weg");
+  // Zurückwischen: Formular und Export folgen dem Finger nach rechts; weit genug oder schnell genug schließt wie „Abbrechen“.
+  function zurueckWischen(dlg) {
     let start = null, richtung = null, letzte = null;
     const zurueck = (animiert) => { dlg.style.transition = animiert ? "transform 0.2s ease" : "none"; dlg.style.transform = ""; };
     dlg.addEventListener("touchstart", (e) => {
@@ -1131,7 +1157,9 @@ legend { padding: 0; margin-bottom: 8px; }
     };
     dlg.addEventListener("touchend", ende);
     dlg.addEventListener("touchcancel", () => { start = null; zurueck(true); });
-  })();
+  }
+  zurueckWischen($("dlg-weg"));
+  zurueckWischen($("dlg-exp"));
   // Löschen im Formular: mit Nachfrage in der unteren Leiste
   const loeschFrage = (an) => { $("weg-confirm").hidden = !an; $("weg-delete").hidden = an; $("weg-save").hidden = an; };
   $("weg-delete").addEventListener("click", () => loeschFrage(true));
@@ -1283,7 +1311,9 @@ legend { padding: 0; margin-bottom: 8px; }
 
   // ---------- Kalender ----------
   let kalMonat = null;   // "YYYY-MM"
-  function kalenderOeffnen() {
+  let kalZiel = null;   // gesetzt, wenn der Kalender ein Kopierziel wählt statt den Tag zu wechseln
+  function kalenderOeffnen(ziel) {
+    kalZiel = typeof ziel === "function" ? ziel : null;
     kalMonat = tag.slice(0, 7);
     kalenderZeichnen();
     $("dlg-kal").showModal();
@@ -1312,7 +1342,7 @@ legend { padding: 0; margin-bottom: 8px; }
         b.append(punkt);
         b.setAttribute("aria-label", `${d}., ${amTag.length} ${amTag.length === 1 ? "Weg" : "Wege"}`);
       }
-      b.addEventListener("click", () => { tag = iso; $("dlg-kal").close(); render(); });
+      b.addEventListener("click", () => { const f = kalZiel; kalZiel = null; $("dlg-kal").close(); if (f) f(iso); else { tag = iso; render(); } });
       grid.append(b);
     }
   }
@@ -1336,6 +1366,7 @@ legend { padding: 0; margin-bottom: 8px; }
   });
   // Tippen neben den Kalender schließt ihn
   $("dlg-kal").addEventListener("click", (e) => { if (e.target === $("dlg-kal")) $("dlg-kal").close(); });
+  $("dlg-kal").addEventListener("close", () => { kalZiel = null; });
   $("fab").addEventListener("click", () => formOeffnen(null));
 
   // ---------- Excel (.xlsx) ohne Bibliothek: XML-Teile + ZIP ohne Kompression ----------
