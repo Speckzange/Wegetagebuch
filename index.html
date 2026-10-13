@@ -1,0 +1,1238 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wegetagebuch</title>
+<meta name="description" content="Wege erfassen und als Excel, PDF oder CSV exportieren.">
+<meta name="theme-color" content="#0b6e4f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Wegetagebuch">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Eine schmale Spalte; jeder Weg ist eine Karte mit seinen Etappen als Stationen. */
+:root {
+  --bg: #eef1ef;
+  --surface: #ffffff;
+  --ink: #17231f;
+  --muted: #5b6863;
+  --line: #d3dad6;
+  --accent: #0b6e4f;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcefe7;
+  --danger: #b3261e;
+  --m1: #0b6e4f; --m2: #2f6fb0; --m3: #c7861a; --m4: #8a4fb0; --m5: #c2513c; --m6: #5b6863;
+  --font-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101614; --surface: #19211e; --ink: #e6ece9; --muted: #9aa8a2; --line: #2c3833;
+    --accent: #4cc39a; --accent-ink: #062a1e; --accent-soft: #1d3a30; --danger: #f2867e;
+    --m1: #4cc39a; --m2: #6ea8e6; --m3: #e3b15a; --m4: #b98ae0; --m5: #e98b75; --m6: #9aa8a2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101614; --surface: #19211e; --ink: #e6ece9; --muted: #9aa8a2; --line: #2c3833;
+  --accent: #4cc39a; --accent-ink: #062a1e; --accent-soft: #1d3a30; --danger: #f2867e;
+  --m1: #4cc39a; --m2: #6ea8e6; --m3: #e3b15a; --m4: #b98ae0; --m5: #e98b75; --m6: #9aa8a2;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.45;
+  padding: 0 16px; -webkit-tap-highlight-color: transparent;
+}
+.app { max-width: 560px; margin: 0 auto; padding-block: 12px 120px; display: flex; flex-direction: column; gap: 18px; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.note { font-size: 0.82rem; color: var(--muted); }
+.hint { font-size: 0.82rem; color: var(--muted); padding: 0 4px; }
+@keyframes puls { 50% { opacity: 0.3; } }
+
+/* Knöpfe */
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 14px; font-weight: 500; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.danger { color: var(--danger); }
+.btn.danger.solid { background: var(--danger); color: var(--surface); border-color: var(--danger); }
+.btn.big { width: 100%; padding: 14px; font-size: 1rem; border-radius: 14px; }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.link { background: none; border: 0; color: var(--accent); font-weight: 600; padding: 8px 4px; }
+.link:disabled { color: var(--muted); }
+.pill-btn { border: 1px solid var(--line); background: var(--surface); color: var(--accent); border-radius: 999px; padding: 5px 14px; font-size: 0.88rem; font-weight: 600; }
+.pill-btn + .pill-btn { margin-left: 6px; }
+.mini { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 4px 9px; font-size: 0.85rem; font-weight: 500; flex: none; }
+.mini.platz { visibility: hidden; }
+
+/* Tagesnavigation */
+.daynav { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; }
+.daynav .arrow { height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 1.2rem; }
+.daypick { position: relative; text-align: center; padding: 6px 0; border-radius: 12px; }
+.daypick .wd { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.daypick .dt { font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; }
+.daypick input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; }
+.chip[aria-current="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip .n { color: var(--muted); margin-left: 4px; }
+.chip[aria-current="true"] .n { color: inherit; opacity: 0.7; }
+.chip .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); margin-left: 5px; vertical-align: 1px; }
+
+/* Wegeliste */
+.offen-hinweis { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--danger); color: var(--danger); background: var(--surface); border-radius: var(--radius); padding: 10px 14px; font-weight: 600; }
+.trips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.trip { width: 100%; text-align: left; display: grid; grid-template-columns: 34px 1fr; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.trip .nr { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; }
+.trip .body { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.trip .head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.trip .zweck { font-weight: 600; }
+.trip .zeit { font-size: 0.9rem; color: var(--muted); }
+.trip.offen { border-color: var(--danger); box-shadow: inset 3px 0 0 var(--danger); }
+.trip.offen .nr { background: var(--danger); color: var(--surface); }
+.trip .zweck.leer, .trip .fehlt-text { color: var(--danger); }
+.trip .fehlt-text { font-size: 0.82rem; font-weight: 600; }
+.route { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 0.86rem; }
+.leg { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 6px; border-radius: 6px; background: var(--bg); }
+.leg + .leg::before { content: "›"; position: absolute; left: -11px; top: 50%; transform: translateY(-52%); color: var(--muted); font-size: 0.9rem; }
+.leg i { width: 8px; height: 8px; border-radius: 50%; }
+.leg .len { color: var(--muted); }
+.empty { text-align: center; color: var(--muted); padding: 28px 12px; border: 1px dashed var(--line); border-radius: var(--radius); }
+.empty strong { display: block; color: var(--ink); font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 4px; }
+
+/* Untere Leiste: Export | Weg starten/beenden | + Weg */
+.dock { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: 84px 1fr 84px; gap: 10px; width: calc(100% - 32px); max-width: 480px; }
+.fab { border: 0; border-radius: 999px; height: 56px; padding: 0 12px; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 1rem; box-shadow: 0 6px 20px rgba(0,0,0,0.18); display: flex; gap: 8px; align-items: center; justify-content: center; white-space: nowrap; }
+.fab svg { width: 22px; height: 22px; }
+.fab:disabled { opacity: 0.5; }
+.fab.second { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+.fab.laeuft { background: var(--danger); color: #fff; flex-direction: column; gap: 0; line-height: 1.2; }
+.fab.laeuft .zeile1 { display: flex; align-items: center; gap: 7px; }
+.fab.laeuft .zeile2 { font-size: 0.78rem; font-weight: 500; opacity: 0.92; }
+.fab.laeuft .pulse { width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+@media (prefers-reduced-motion: no-preference) { .fab.laeuft .pulse { animation: puls 1.6s ease-in-out infinite; } }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 10px; font-size: 0.9rem; max-width: calc(100% - 32px); }
+
+/* Blätter (Formular, Export) */
+dialog { border: 0; padding: 0; width: 100%; max-width: 560px; max-height: 100%; height: 100%; margin: 0 auto; background: var(--bg); color: var(--ink); }
+dialog::backdrop { background: rgba(0,0,0,0.35); }
+@media (min-width: 600px) { dialog { height: auto; max-height: 92vh; margin-top: 4vh; border-radius: 18px; } }
+.sheet { display: flex; flex-direction: column; height: 100%; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.sheet-head .kopf-platz { width: 72px; }
+.sheet-head h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
+.sheet-body { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+legend { padding: 0; margin-bottom: 8px; }
+.group { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 14px; }
+.field { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; min-height: 48px; }
+/* Trennlinie nur zwischen sichtbaren Zeilen (ausgeblendete Freitext-Zeilen zählen nicht) */
+.field:not([hidden]) ~ .field:not([hidden]) { border-top: 1px solid var(--line); }
+.field > :first-child { flex: none; }
+.field.fehlt > :first-child { color: var(--danger); }
+.field input, .field select { border: 0; background: transparent; text-align: right; min-width: 0; flex: 1; font-size: 1rem; }
+.field select { text-align-last: right; }
+.field input.switch { flex: none; width: 22px; height: 22px; accent-color: var(--accent); }
+.len-in { display: flex; gap: 6px; align-items: baseline; flex: 1; justify-content: flex-end; }
+.len-in input { max-width: 120px; font-variant-numeric: tabular-nums; }
+.len-in .unit { color: var(--muted); }
+/* Datum und Uhrzeiten rechtsbündig untereinander */
+.field input[type="date"], .field input[type="time"] {
+  -webkit-appearance: none; appearance: none; flex: 0 0 auto; width: 9em;
+  text-align: right; font-variant-numeric: tabular-nums; padding: 0; margin: 0;
+}
+.field input::-webkit-date-and-time-value { text-align: right; margin: 0; }
+.field input::-webkit-calendar-picker-indicator { margin-left: 6px; }
+/* Start, Dauer, Ankunft: Jetzt-Knopf links, das berechnete Feld grün */
+.zeit-in { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex: 1; min-width: 0; }
+.zeit-in input[type="time"] { width: 6.5em; }
+.calc { display: block; font-size: 0.72rem; color: var(--accent); font-weight: 600; }
+.berechnet input { color: var(--accent); }
+.add-leg { align-self: flex-start; }
+#legs { display: flex; flex-direction: column; gap: 18px; }
+.confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--danger); }
+
+/* Export */
+.block { display: flex; flex-direction: column; gap: 8px; }
+.block-head { display: flex; justify-content: space-between; align-items: center; }
+.seg { display: flex; gap: 3px; padding: 3px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.seg button { flex: 1; border: 0; background: none; color: var(--ink); padding: 9px 6px; border-radius: 9px; font-weight: 500; font-size: 0.95rem; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.tag-zeile .wann { display: flex; flex-direction: column; gap: 1px; }
+.tag-zeile .wann small { color: var(--muted); font-size: 0.8rem; }
+.tag-zeile .wann small .rot { color: var(--danger); font-weight: 600; }
+.warnbox { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--radius); border: 1px solid var(--danger); background: var(--surface); }
+.warnbox strong { color: var(--danger); font-family: var(--font-display); font-size: 1.05rem; }
+.warnbox ul { margin: 0; padding-left: 18px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .trip, .btn, .chip { transition: transform 0.12s ease; }
+  .trip:active, .btn:active { transform: scale(0.985); }
+}
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <button type="button" class="offen-hinweis" id="offen-hinweis" hidden><span id="offen-text"></span><span aria-hidden="true">›</span></button>
+
+  <nav class="daynav" aria-label="Tag wählen">
+    <button class="arrow" id="prev" aria-label="Vorheriger Tag">‹</button>
+    <label class="daypick">
+      <div class="wd" id="day-wd"></div>
+      <div class="dt" id="day-dt"></div>
+      <input type="date" id="day-input" aria-label="Datum wählen">
+    </label>
+    <button class="arrow" id="next" aria-label="Nächster Tag">›</button>
+  </nav>
+  <div class="chips" id="chips" aria-label="Tage mit Einträgen"></div>
+
+  <ul class="trips" id="trips"></ul>
+
+</div>
+
+<div class="dock">
+  <button class="fab second" id="btn-export" aria-label="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
+  <button class="fab" id="fab-start"><span aria-hidden="true">▶</span> Weg starten</button>
+  <button class="fab laeuft" id="fab-ende" hidden aria-live="polite"><span class="zeile1"><span class="pulse" aria-hidden="true"></span>Weg beenden</span><span class="zeile2" id="laeuft-text"></span></button>
+  <button class="fab second" id="fab"><span aria-hidden="true">＋</span> Weg</button>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<dialog id="dlg-weg" aria-labelledby="weg-title">
+  <form class="sheet" id="form-weg" novalidate>
+    <div class="sheet-head">
+      <button type="button" class="link" id="weg-cancel">Abbrechen</button>
+      <h2 id="weg-title">Neuer Weg</h2>
+      <button type="submit" class="link" id="weg-save">Sichern</button>
+    </div>
+    <div class="sheet-body">
+      <fieldset>
+        <legend class="label">Zeit</legend>
+        <div class="group">
+          <label class="field"><span>Datum</span><input type="date" id="f-datum" required></label>
+          <div class="field" id="z-start"><label for="f-start">Startzeit<span class="calc" hidden>berechnet</span></label><span class="zeit-in"><button type="button" class="mini" id="f-start-jetzt">Jetzt</button><input type="time" id="f-start" required></span></div>
+          <div class="field" id="z-dauer"><label for="f-dauer">Dauer<span class="calc" hidden>berechnet</span></label><span class="zeit-in"><span class="mini platz" aria-hidden="true">Jetzt</span><input type="time" id="f-dauer"></span></div>
+          <div class="field" id="z-ankunft"><label for="f-ankunft">Ankunftszeit<span class="calc" hidden>berechnet</span></label><span class="zeit-in"><button type="button" class="mini" id="f-ankunft-jetzt">Jetzt</button><input type="time" id="f-ankunft" required></span></div>
+        </div>
+        <div class="hint" id="f-plus1" hidden>Ankunft am nächsten Tag (+1). Der Weg zählt zum Starttag.</div>
+        <div class="hint">Zwei Werte eingeben, der dritte wird berechnet.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend class="label">Zweck</legend>
+        <div class="group">
+          <label class="field"><span>Zweck</span><select id="f-zweck"></select></label>
+          <label class="field" id="f-zweck-frei-row" hidden><span>Neuer Zweck</span><input type="text" id="f-zweck-frei" placeholder="z. B. Uni" autocomplete="off"></label>
+        </div>
+      </fieldset>
+
+      <div id="legs"></div>
+      <button type="button" class="btn add-leg" id="add-leg">＋ Weiteres Verkehrsmittel</button>
+
+      <div id="weg-delete-area" hidden>
+        <button type="button" class="btn danger" id="weg-delete">Weg löschen</button>
+        <div class="confirm" id="weg-confirm" hidden>
+          <span>Diesen Weg wirklich löschen?</span>
+          <button type="button" class="btn danger solid" id="weg-delete-yes">Löschen</button>
+          <button type="button" class="btn" id="weg-delete-no">Behalten</button>
+        </div>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-exp" aria-labelledby="exp-title">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="link" id="exp-close">Schließen</button>
+      <h2 id="exp-title">Export</h2>
+      <span class="kopf-platz"></span>
+    </div>
+    <div class="sheet-body" id="exp-main">
+      <div class="block">
+        <div class="block-head"><span class="label">Tage</span><span><button type="button" class="pill-btn" id="exp-alle">Alle</button><button type="button" class="pill-btn" id="exp-keine">Keine</button></span></div>
+        <div class="group" id="exp-tage"></div>
+      </div>
+      <div class="block">
+        <span class="label">Format</span>
+        <div class="seg" id="exp-format">
+          <button type="button" data-v="xlsx" aria-pressed="true">Excel</button>
+          <button type="button" data-v="pdf" aria-pressed="false">PDF</button>
+          <button type="button" data-v="csv" aria-pressed="false">CSV</button>
+        </div>
+        <div class="seg" id="exp-ausr">
+          <button type="button" data-v="quer" aria-pressed="true">Querformat</button>
+          <button type="button" data-v="hoch" aria-pressed="false">Hochformat</button>
+        </div>
+        <div class="hint" id="exp-format-hint"></div>
+      </div>
+      <div class="block" id="exp-optionen">
+        <span class="label">Optionen</span>
+        <div class="group">
+          <label class="field"><span>Dauer anzeigen</span><input type="checkbox" id="exp-dauer" class="switch"></label>
+          <label class="field"><span>Name</span><input type="text" id="exp-name" placeholder="optional" autocomplete="name"></label>
+          <label class="field"><span>Matrikelnummer</span><input type="text" id="exp-matr" placeholder="optional" inputmode="numeric" autocomplete="off"></label>
+          <label class="field"><span>Tabelle auffüllen auf</span><span class="len-in"><input type="number" id="exp-zeilen" min="0" max="30" inputmode="numeric"><span class="unit">Zeilen</span></span></label>
+        </div>
+        <div class="hint">Leere, nummerierte Zeilen wie in der Vorlage. Bei mehr Wegen wird die Tabelle länger. 0 = keine leeren Zeilen.</div>
+      </div>
+      <div class="block">
+        <button type="button" class="btn primary big" id="exp-go">Exportieren</button>
+        <div class="hint" id="exp-vorschau"></div>
+      </div>
+      <div class="block">
+        <span class="label">Sicherung</span>
+        <div class="btnrow">
+          <button type="button" class="btn" id="bak-save">Sicherung speichern</button>
+          <button type="button" class="btn" id="bak-load">Sicherung laden</button>
+        </div>
+        <input type="file" id="bak-file" accept=".json,application/json" hidden>
+        <div class="hint" id="s-storage"></div>
+      </div>
+    </div>
+    <div class="sheet-body" id="exp-warn" hidden>
+      <div class="warnbox">
+        <strong id="exp-warn-titel"></strong>
+        <ul id="exp-warn-liste"></ul>
+        <span class="note">Diese Wege werden nicht exportiert. Die übrigen Wege werden lückenlos nummeriert.</span>
+        <div class="btnrow">
+          <button type="button" class="btn primary" id="exp-ohne">Ohne diese exportieren</button>
+          <button type="button" class="btn" id="exp-zurueck">Zurück</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Stammdaten ----------
+  const ANDERE = "__andere__";
+  const CACHE_KEY = "wegetagebuch.v1";
+
+  // ---------- Zustand ----------
+  let wege = [];                 // {id, datum:"YYYY-MM-DD", start:"HH:MM", ankunft:"HH:MM", dauer (min), zweck, etappen:[{vm, m}], erstellt}
+  // laufend: gestarteter Weg {datum, start, ts}; export: zuletzt gewählte Export-Optionen
+  let settings = { mindestZeilen: 10, zwecke: [], verkehrsmittel: [], laengen: [], laufend: null, export: {} };
+  let tag = heute();
+  let store = { mode: "local", db: null, uid: null };
+  let editId = null;
+  let rotMarkieren = false;      // Formular zeigt fehlende Angaben rot
+  let cacheQuelle = null;        // "local", wenn die Kopie im Browser noch nie im Konto war
+
+  // ---------- Hilfen ----------
+  const $ = (id) => document.getElementById(id);
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function isoDatum(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+  function heute() { return isoDatum(new Date()); }
+  function parseDatum(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+  function verschiebe(s, tage) { const d = parseDatum(s); d.setDate(d.getDate() + tage); return isoDatum(d); }
+  function deDatum(s) { const [y, m, d] = s.split("-"); return `${d}.${m}.${y}`; }
+  function uhrzeit(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  function minuten(hm) { if (!hm) return NaN; const [h, m] = hm.split(":").map(Number); return h * 60 + m; }
+  function laenge(m) {
+    if (!m || m <= 0) return "";
+    if (m < 1000) return `${Math.round(m)}m`;
+    const km = Math.round(m / 10) / 100;
+    return `${String(km).replace(".", ",")}km`;
+  }
+  function zahl(text) {
+    const t = String(text || "").trim().replace(",", ".");
+    if (!t) return null;
+    const v = Number(t);
+    return Number.isFinite(v) ? v : NaN;
+  }
+  function neueId() { return "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function sortiert(liste) {
+    const s = (w) => w.start ? minuten(w.start) : 9999;
+    return [...liste].sort((a, b) => s(a) === s(b) ? (a.erstellt || 0) - (b.erstellt || 0) : s(a) - s(b));
+  }
+  // Dauer in Minuten; über Mitternacht zählt die Ankunft am Folgetag.
+  function dauerVon(w) { return w.start && w.ankunft ? (minuten(w.ankunft) - minuten(w.start) + 1440) % 1440 : null; }
+  function ueberNacht(w) { return !!(w.start && w.ankunft) && minuten(w.ankunft) < minuten(w.start); }
+  function dauerText(min) {
+    if (min == null) return "";
+    if (min < 60) return `${min} min`;
+    const h = Math.floor(min / 60), m = min % 60;
+    return m ? `${h} h ${m} min` : `${h} h`;
+  }
+  // Pflicht: Zeiten (Start, Ankunft und damit Dauer), Zweck, Verkehrsmittel 1, Wegelänge 1
+  function fehlt(w) {
+    const f = [];
+    if (!w.start || !w.ankunft) f.push("Zeit");
+    if (!w.zweck) f.push("Zweck");
+    const e = (w.etappen || [])[0];
+    if (!e || !e.vm) f.push("Verkehrsmittel");
+    if (!e || !e.m) f.push("Wegelänge");
+    return f;
+  }
+  function vollstaendig(w) { return !fehlt(w).length; }
+  function offeneWege() {
+    return wege.filter((w) => !vollstaendig(w))
+      .sort((a, b) => a.datum.localeCompare(b.datum) || (minuten(a.start) || 0) - (minuten(b.start) || 0));
+  }
+  function wegeAm(datum) { return sortiert(wege.filter((w) => w.datum === datum)); }
+  function farbe(vm) { const i = vmListe().indexOf(vm); return `var(--m${i < 0 ? 6 : (i % 5) + 1})`; }
+
+  let toastTimer;
+  function toast(text) {
+    const t = $("toast");
+    t.textContent = text; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+  }
+
+  // ---------- Speicher ----------
+  function cacheLesen() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.wege)) wege = data.wege;
+      if (data.settings) settings = { ...settings, ...data.settings };
+      cacheQuelle = data.quelle || "local";
+    } catch (_) {}
+  }
+  function cacheSchreiben() {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ wege, settings, quelle: store.mode })); } catch (_) {}
+  }
+  function speicherHinweis() {
+    $("s-storage").textContent = store.mode === "db"
+      ? "Deine Wege liegen privat in deinem Claude-Konto. Sie bleiben erhalten, auch wenn du Safari-Daten löschst, und erscheinen auf jedem Gerät, auf dem du diese Seite angemeldet öffnest. Zusätzlich hält der Browser eine Kopie."
+      : "Deine Wege liegen nur in diesem Browser. Wenn du die Browserdaten löschst, sind sie weg. Speichere deshalb ab und zu eine Sicherung (z. B. in iCloud oder OneDrive).";
+  }
+  function wegeSammlung() { return store.db.collection(`data/users/${store.uid}/profil/wege`); }
+
+  async function speicherVerbinden() {
+    const c = window.claude;
+    if (!c || typeof c.use !== "function") return;
+    try {
+      const [db, user] = await Promise.all([c.use("db"), c.use("user")]);
+      if (!db || !user) return;
+      const uid = await user.id();
+      if (!uid) return;
+      store = { mode: "db", db, uid };
+      speicherHinweis();
+
+      // Einstellungen live, damit ein gestarteter Weg auf allen Geräten erscheint.
+      db.doc(`data/users/${uid}/profil`).onSnapshot((profil) => {
+        if (!profil.exists) return;
+        const d = profil.data() || {};
+        settings = { ...settings, laufend: null, ...(d.settings || {}) };
+        cacheSchreiben();
+        render();
+      }, () => {});
+
+      let ersterStand = true;
+      wegeSammlung().onSnapshot((snap) => {
+        const neu = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+        if (ersterStand && snap.empty && !snap.metadata.fromCache && wege.length && cacheQuelle === "local") {
+          // Einträge, die vorher nur im Browser lagen, einmalig ins Konto übernehmen.
+          const lokal = wege;
+          ersterStand = false;
+          (async () => { for (const w of lokal) { await wegeSammlung().doc(w.id).set(w); } })().catch(() => {});
+          return;
+        }
+        if (!snap.metadata.fromCache) ersterStand = false;
+        wege = neu;
+        cacheSchreiben();
+        render();
+      }, () => {
+        store = { mode: "local", db: null, uid: null };
+        speicherHinweis();
+      });
+    } catch (_) {
+      store = { mode: "local", db: null, uid: null };
+      speicherHinweis();
+    }
+  }
+
+  async function wegSichern(w) {
+    const i = wege.findIndex((x) => x.id === w.id);
+    if (i >= 0) wege[i] = w; else wege.push(w);
+    cacheSchreiben(); render();
+    if (store.mode === "db") {
+      try { await wegeSammlung().doc(w.id).set(w); }
+      catch (e) { toast(e && e.code === "quota_exceeded" ? "Speicher voll. Bitte alte Wege exportieren und löschen." : "Konnte nicht im Konto speichern. Im Browser ist der Weg gesichert."); }
+    }
+  }
+  async function wegLoeschen(id) {
+    wege = wege.filter((w) => w.id !== id);
+    cacheSchreiben(); render();
+    if (store.mode === "db") {
+      try { await wegeSammlung().doc(id).delete(); } catch (_) { toast("Löschen im Konto hat nicht geklappt."); }
+    }
+  }
+  async function einstellungenSichern() {
+    cacheSchreiben();
+    if (store.mode === "db") {
+      try { await store.db.doc(`data/users/${store.uid}/profil`).set({ settings }); } catch (_) {}
+    }
+  }
+
+  // ---------- Darstellung ----------
+  function render() {
+    const d = parseDatum(tag);
+    $("day-wd").textContent = d.toLocaleDateString("de-DE", { weekday: "long" }) + (tag === heute() ? " · heute" : "");
+    $("day-dt").textContent = d.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+    $("day-input").value = tag;
+
+    // Tage mit Einträgen
+    const zaehler = {};
+    wege.forEach((w) => { zaehler[w.datum] = (zaehler[w.datum] || 0) + 1; });
+    const tage = Object.keys(zaehler).sort().reverse();
+    const chips = $("chips");
+    chips.replaceChildren(...tage.map((t) => {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button";
+      b.setAttribute("aria-current", t === tag ? "true" : "false");
+      b.append(deDatum(t).slice(0, 6));
+      const n = document.createElement("span"); n.className = "n"; n.textContent = zaehler[t];
+      b.append(n);
+      if (wege.some((w) => w.datum === t && !vollstaendig(w))) {
+        const d = document.createElement("span"); d.className = "dot"; d.setAttribute("aria-label", "unvollständig"); b.append(d);
+      }
+      b.addEventListener("click", () => { tag = t; render(); });
+      return b;
+    }));
+    chips.hidden = tage.length === 0;
+
+    const liste = wegeAm(tag);
+
+    const ul = $("trips");
+    ul.replaceChildren();
+    if (!liste.length) {
+      const li = document.createElement("li"); li.className = "empty";
+      const s = document.createElement("strong"); s.textContent = "Noch keine Wege an diesem Tag";
+      li.append(s, "Tippe beim Losgehen auf „Weg starten“ und beim Ankommen auf „Weg beenden“. Vergessene Wege trägst du mit „＋ Weg“ nach.");
+      ul.append(li);
+    }
+    liste.forEach((w, i) => {
+      const li = document.createElement("li");
+      const offen = fehlt(w);
+      const b = document.createElement("button"); b.type = "button"; b.className = "trip" + (offen.length ? " offen" : "");
+      b.dataset.id = w.id;
+      b.setAttribute("aria-label", `Weg ${i + 1} bearbeiten` + (offen.length ? ", unvollständig" : ""));
+      const nr = document.createElement("div"); nr.className = "nr"; nr.textContent = i + 1;
+      const body = document.createElement("div"); body.className = "body";
+      const head = document.createElement("div"); head.className = "head";
+      const z = document.createElement("span"); z.className = "zweck" + (w.zweck ? "" : " leer"); z.textContent = w.zweck || "Zweck fehlt";
+      const t = document.createElement("span"); t.className = "zeit mono";
+      t.textContent = `${w.start || "?"} – ${w.ankunft || "?"}${ueberNacht(w) ? " (+1)" : ""}` + (dauerVon(w) != null ? ` · ${dauerText(dauerVon(w))}` : "");
+      head.append(z, t);
+      const route = document.createElement("div"); route.className = "route";
+      (w.etappen || []).forEach((e, k) => {
+        const leg = document.createElement("span"); leg.className = "leg";
+        const dot = document.createElement("i"); dot.style.background = farbe(e.vm);
+        leg.append(dot, e.vm);
+        if (e.m) { const len = document.createElement("span"); len.className = "len mono"; len.textContent = laenge(e.m); leg.append(len); }
+        route.append(leg);
+      });
+      body.append(head, route);
+      if (offen.length) { const f = document.createElement("div"); f.className = "fehlt-text"; f.textContent = `Fehlt: ${offen.join(", ")}`; body.append(f); }
+      b.append(nr, body);
+      b.addEventListener("click", () => formOeffnen(w));
+      li.append(b);
+      ul.append(li);
+    });
+
+    const offen = offeneWege().length;
+    $("offen-hinweis").hidden = !offen;
+    $("offen-text").textContent = `${offen} ${offen === 1 ? "Weg" : "Wege"} unvollständig`;
+    laufendZeigen();
+  }
+
+  // ---------- Laufender Weg ----------
+  function laufendZeigen() {
+    const l = settings.laufend;
+    $("fab-start").hidden = !!l;
+    $("fab-ende").hidden = !l;
+    if (!l) return;
+    const min = Math.max(0, Math.floor((Date.now() - l.ts) / 60000));
+    const tagText = l.datum === heute() ? "" : ` (${deDatum(l.datum).slice(0, 6)})`;
+    $("laeuft-text").textContent = `seit ${l.start}${tagText} · ${dauerText(min)}`;
+  }
+  setInterval(() => { if (settings.laufend) laufendZeigen(); }, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) laufendZeigen(); });
+
+  $("fab-start").addEventListener("click", () => {
+    const jetzt = new Date();
+    settings = { ...settings, laufend: { datum: isoDatum(jetzt), start: uhrzeit(jetzt), ts: jetzt.getTime() } };
+    einstellungenSichern();
+    tag = settings.laufend.datum;
+    render();
+  });
+  $("fab-ende").addEventListener("click", () => {
+    const l = settings.laufend;
+    if (!l) return;
+    const w = { id: neueId(), datum: l.datum, start: l.start, ankunft: uhrzeit(new Date()), zweck: "", etappen: [], erstellt: Date.now() };
+    w.dauer = dauerVon(w);
+    settings = { ...settings, laufend: null };
+    einstellungenSichern();
+    tag = w.datum;
+    wegSichern(w);
+  });
+  $("offen-hinweis").addEventListener("click", () => {
+    const erster = offeneWege()[0];
+    if (!erster) return;
+    tag = erster.datum;
+    render();
+    const el = document.querySelector(`.trip[data-id="${erster.id}"]`);
+    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
+
+  // ---------- Formular ----------
+  let legs = []; // [{vm, m, neuModus, neu}]  m = Länge in Metern, neu = eigene Länge in km als Text
+  const neueEtappe = () => ({ vm: "", m: null, neuModus: false, neu: "" });
+
+  // Eigene Zwecke: gespeicherte Liste plus alles, was schon in Wegen vorkommt.
+  function zweckListe() {
+    const liste = [...(settings.zwecke || [])];
+    wege.forEach((w) => { if (w.zweck && !liste.includes(w.zweck)) liste.push(w.zweck); });
+    return liste;
+  }
+  function vmListe() {
+    const liste = [...(settings.verkehrsmittel || [])];
+    wege.forEach((w) => (w.etappen || []).forEach((e) => { if (e.vm && !liste.includes(e.vm)) liste.push(e.vm); }));
+    return liste;
+  }
+
+  // Wegelängen in Metern: sinnvolle Vorauswahl plus eigene und schon verwendete Werte
+  const LAENGEN = [100, 250, 500, 1000, 2000, 3000, 4000, 5000, 7500, 10000, 15000];
+  function laengeListe() {
+    const set = new Set([...LAENGEN, ...(settings.laengen || [])]);
+    wege.forEach((w) => (w.etappen || []).forEach((e) => { if (e.m) set.add(e.m); }));
+    return [...set].sort((a, b) => a - b);
+  }
+  const MAX_ETAPPEN = 8;
+
+  // Auswahlliste: leerer Eintrag, bekannte Werte, "+ Neu" zum Eintippen
+  function optionen(select, liste, leer, wert) {
+    select.replaceChildren(new Option(leer, ""), ...liste.map((x) => new Option(x, x)), new Option("+ Neu", ANDERE));
+    select.value = liste.includes(wert) ? wert : (wert ? ANDERE : "");
+  }
+
+  function legsZeichnen() {
+    const box = $("legs");
+    box.replaceChildren();
+    legs.forEach((leg, i) => {
+      const fs = document.createElement("fieldset");
+      const lg = document.createElement("legend"); lg.className = "label"; lg.textContent = `Verkehrsmittel ${i + 1}`;
+      const grp = document.createElement("div"); grp.className = "group";
+
+      const f1 = document.createElement("label"); f1.className = "field";
+      const s1 = document.createElement("span"); s1.textContent = "Verkehrsmittel";
+      const sel = document.createElement("select"); sel.id = `f-vm-${i}`;
+      const vms = vmListe();
+      optionen(sel, vms, i === 0 ? "Bitte wählen" : "–", leg.vm);
+      if (!vms.length && !leg.vm) sel.value = ANDERE;   // erste Nutzung: gleich eintippen
+      f1.append(s1, sel);
+
+      const f2 = document.createElement("label"); f2.className = "field";
+      const s2 = document.createElement("span"); s2.textContent = "Neues Verkehrsmittel";
+      const frei = document.createElement("input"); frei.type = "text"; frei.id = `f-vmfrei-${i}`; frei.placeholder = "z. B. Tram"; frei.autocomplete = "off";
+      frei.value = vms.includes(leg.vm) ? "" : leg.vm;
+      f2.append(s2, frei);
+      f2.hidden = sel.value !== ANDERE;
+
+      // Wegelänge als eigener Block: Auswahlliste, eigene Werte über "+ Neu" (in km)
+      const fs2 = document.createElement("fieldset");
+      const lg2 = document.createElement("legend"); lg2.className = "label"; lg2.textContent = `Wegelänge ${i + 1}`;
+      const grp2 = document.createElement("div"); grp2.className = "group";
+      const f3 = document.createElement("label"); f3.className = "field";
+      const s3 = document.createElement("span"); s3.textContent = "Länge";
+      const lsel = document.createElement("select"); lsel.id = `f-len-${i}`;
+      lsel.add(new Option("–", ""));
+      laengeListe().forEach((m) => lsel.add(new Option(laenge(m), String(m))));
+      lsel.add(new Option("+ Neu", ANDERE));
+      lsel.value = leg.neuModus ? ANDERE : (leg.m ? String(leg.m) : "");
+      f3.append(s3, lsel);
+      const f4 = document.createElement("label"); f4.className = "field";
+      const s4 = document.createElement("span"); s4.textContent = "Neue Länge";
+      const lenBox = document.createElement("div"); lenBox.className = "len-in";
+      const inp = document.createElement("input"); inp.id = `f-lenneu-${i}`; inp.inputMode = "decimal"; inp.placeholder = "z. B. 12,5"; inp.autocomplete = "off";
+      inp.value = leg.neu || "";
+      const unit = document.createElement("span"); unit.className = "unit"; unit.textContent = "km";
+      lenBox.append(inp, unit);
+      f4.append(s4, lenBox);
+      f4.hidden = lsel.value !== ANDERE;
+      grp2.append(f3, f4);
+      fs2.append(lg2, grp2);
+      lsel.addEventListener("change", () => {
+        leg.neuModus = lsel.value === ANDERE;
+        f4.hidden = !leg.neuModus;
+        if (leg.neuModus) inp.focus(); else leg.m = lsel.value ? Number(lsel.value) : null;
+        pruefen();
+      });
+
+      sel.addEventListener("change", () => {
+        if (sel.value === ANDERE) { f2.hidden = false; leg.vm = frei.value.trim(); frei.focus(); }
+        else { f2.hidden = true; leg.vm = sel.value; }
+        if (sel.value === "" && i > 0) { legs.splice(i); legsZeichnen(); }
+        pruefen();
+      });
+      frei.addEventListener("input", () => { leg.vm = frei.value.trim(); pruefen(); });
+      inp.addEventListener("input", () => { leg.neu = inp.value; pruefen(); });
+
+      grp.append(f1, f2);
+      fs.append(lg, grp);
+      box.append(fs, fs2);
+    });
+  }
+
+  function zweckWert() {
+    const s = $("f-zweck").value;
+    return s === ANDERE ? $("f-zweck-frei").value.trim() : s;
+  }
+
+  // Zeit: Von Start, Dauer und Ankunft bestimmen die zwei zuletzt bearbeiteten das dritte.
+  const ZEITFELD = { start: "f-start", dauer: "f-dauer", ankunft: "f-ankunft" };
+  let zuletzt = [];
+  function zeitWert(k) {
+    const v = $(ZEITFELD[k]).value;
+    return v ? minuten(v.slice(0, 5)) : null;
+  }
+  function hm(min) { const m = ((min % 1440) + 1440) % 1440; return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; }
+  function zeitBerechnen() {
+    const ziel = zuletzt.length === 2 ? ["start", "dauer", "ankunft"].find((k) => !zuletzt.includes(k)) : null;
+    ["start", "dauer", "ankunft"].forEach((k) => {
+      const zeile = $(`z-${k}`);
+      const an = k === ziel;
+      zeile.classList.toggle("berechnet", an);
+      zeile.querySelector(".calc").hidden = !an;
+    });
+    if (!ziel) return;
+    const [a, b] = zuletzt.map(zeitWert);
+    if (a == null || b == null) return;
+    const v = { [zuletzt[0]]: a, [zuletzt[1]]: b };
+    if (ziel === "ankunft") $("f-ankunft").value = hm(v.start + v.dauer);
+    if (ziel === "start") $("f-start").value = hm(v.ankunft - v.dauer);
+    if (ziel === "dauer") $("f-dauer").value = hm(v.ankunft - v.start);
+  }
+  function zeitGeaendert(k) {
+    zuletzt = [k, ...zuletzt.filter((x) => x !== k)].slice(0, 2);
+    zeitBerechnen();
+    pruefen();
+  }
+
+  // Sichern geht immer; fehlende Angaben machen den Weg nur "unvollständig".
+  function pruefen() {
+    const ok = !!$("f-datum").value && legs.every((l) => !l.neuModus || !Number.isNaN(zahl(l.neu)));
+    $("weg-save").disabled = !ok;
+    const l0 = legs[0] || {};
+    const lenOk = l0.neuModus ? zahl(l0.neu) > 0 : !!l0.m;
+    const markiere = (el, an) => { if (el) el.classList.toggle("fehlt", rotMarkieren && an); };
+    markiere($("z-start"), !$("f-start").value);
+    markiere($("z-dauer"), !$("f-dauer").value);
+    markiere($("z-ankunft"), !$("f-ankunft").value);
+    markiere($("f-zweck").closest(".field"), !zweckWert());
+    markiere($("f-vm-0") && $("f-vm-0").closest(".field"), !l0.vm);
+    markiere($("f-len-0") && $("f-len-0").closest(".field"), !lenOk);
+    $("f-plus1").hidden = !($("f-start").value && $("f-ankunft").value && $("f-ankunft").value.slice(0, 5) < $("f-start").value.slice(0, 5));
+    $("add-leg").hidden = legs.length >= MAX_ETAPPEN || !legs[legs.length - 1].vm;
+    return ok;
+  }
+
+  function formOeffnen(w) {
+    editId = w ? w.id : null;
+    rotMarkieren = !!w && !vollstaendig(w);
+    const nr = w ? wegeAm(w.datum).findIndex((x) => x.id === w.id) + 1 : 0;
+    $("weg-title").textContent = w ? `Weg ${nr}` : "Neuer Weg";
+    const v = w || { datum: tag, start: "", ankunft: uhrzeit(new Date()) };
+    $("f-datum").value = v.datum;
+    $("f-start").value = v.start || "";
+    $("f-ankunft").value = v.ankunft || "";
+    $("f-dauer").value = "";
+    zuletzt = v.start && v.ankunft ? ["start", "ankunft"] : v.start ? ["start"] : v.ankunft ? ["ankunft"] : [];
+    zeitBerechnen();
+    const zwecke = zweckListe();
+    optionen($("f-zweck"), zwecke, "Bitte wählen", w ? w.zweck : "");
+    if (!zwecke.length) $("f-zweck").value = ANDERE;   // erste Nutzung: gleich eintippen
+    $("f-zweck-frei").value = "";
+    $("f-zweck-frei-row").hidden = $("f-zweck").value !== ANDERE;
+    legs = w && w.etappen && w.etappen.length
+      ? w.etappen.map((e) => ({ vm: e.vm, m: e.m || null, neuModus: false, neu: "" }))
+      : [neueEtappe()];
+    legsZeichnen();
+    $("weg-delete-area").hidden = !w;
+    $("weg-confirm").hidden = true;
+    $("weg-delete").hidden = false;
+    pruefen();
+    $("dlg-weg").showModal();
+  }
+
+  $("f-zweck").addEventListener("change", () => {
+    const frei = $("f-zweck").value === ANDERE;
+    $("f-zweck-frei-row").hidden = !frei;
+    if (frei) $("f-zweck-frei").focus();
+    pruefen();
+  });
+  ["f-zweck-frei", "f-datum"].forEach((id) => $(id).addEventListener("input", pruefen));
+  ["start", "dauer", "ankunft"].forEach((k) => $(ZEITFELD[k]).addEventListener("input", () => zeitGeaendert(k)));
+  $("f-start-jetzt").addEventListener("click", () => { $("f-start").value = uhrzeit(new Date()); zeitGeaendert("start"); });
+  $("f-ankunft-jetzt").addEventListener("click", () => { $("f-ankunft").value = uhrzeit(new Date()); zeitGeaendert("ankunft"); });
+  $("add-leg").addEventListener("click", () => { if (legs.length < MAX_ETAPPEN) { legs.push(neueEtappe()); legsZeichnen(); pruefen(); } });
+  $("weg-cancel").addEventListener("click", () => $("dlg-weg").close());
+  $("weg-delete").addEventListener("click", () => { $("weg-confirm").hidden = false; $("weg-delete").hidden = true; });
+  $("weg-delete-no").addEventListener("click", () => { $("weg-confirm").hidden = true; $("weg-delete").hidden = false; });
+  $("weg-delete-yes").addEventListener("click", () => {
+    if (editId) wegLoeschen(editId);
+    $("dlg-weg").close();
+    toast("Weg gelöscht");
+  });
+
+  $("form-weg").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!pruefen()) return;
+    const alt = editId ? wege.find((w) => w.id === editId) : null;
+    const w = {
+      id: editId || neueId(),
+      datum: $("f-datum").value,
+      start: $("f-start").value.slice(0, 5),
+      ankunft: $("f-ankunft").value.slice(0, 5),
+      zweck: zweckWert(),
+      etappen: legs.filter((l) => l.vm).map((l) => {
+        if (!l.neuModus) return { vm: l.vm, m: l.m || null };
+        const v = zahl(l.neu);
+        return { vm: l.vm, m: v && v > 0 ? Math.round(v * 1000) : null };
+      }),
+      erstellt: alt ? alt.erstellt : Date.now(),
+    };
+    w.dauer = dauerVon(w);
+    tag = w.datum;
+    // Neue Zwecke, Verkehrsmittel und Längen bleiben dauerhaft im Menü, auch wenn der Weg gelöscht wird.
+    const ergaenzt = (liste, neu) => [...new Set([...(liste || []), ...neu.filter(Boolean)])];
+    const vorher = JSON.stringify([settings.zwecke, settings.verkehrsmittel, settings.laengen]);
+    settings = {
+      ...settings,
+      zwecke: ergaenzt(settings.zwecke, [w.zweck]),
+      verkehrsmittel: ergaenzt(settings.verkehrsmittel, w.etappen.map((e) => e.vm)),
+      laengen: ergaenzt(settings.laengen, w.etappen.map((e) => e.m).filter((m) => !LAENGEN.includes(m))),
+    };
+    if (JSON.stringify([settings.zwecke, settings.verkehrsmittel, settings.laengen]) !== vorher) einstellungenSichern();
+    wegSichern(w);
+    $("dlg-weg").close();
+  });
+
+  // ---------- Navigation ----------
+  $("prev").addEventListener("click", () => { tag = verschiebe(tag, -1); render(); });
+  $("next").addEventListener("click", () => { tag = verschiebe(tag, 1); render(); });
+  $("day-input").addEventListener("change", (e) => { if (e.target.value) { tag = e.target.value; render(); } });
+  $("fab").addEventListener("click", () => formOeffnen(null));
+
+  // ---------- Excel (.xlsx) ohne Bibliothek: XML-Teile + ZIP ohne Kompression ----------
+  const CRC = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) { let c = i; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[i] = c >>> 0; }
+    return t;
+  })();
+  function crc32(bytes) { let c = 0xFFFFFFFF; for (let i = 0; i < bytes.length; i++) c = CRC[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function zip(dateien) {
+    const enc = new TextEncoder();
+    const teile = []; const zentral = []; let offset = 0; let zentralGroesse = 0;
+    for (const [pfad, text] of dateien) {
+      const name = enc.encode(pfad); const data = enc.encode(text); const crc = crc32(data);
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0, true); lh.setUint16(8, 0, true);
+      lh.setUint16(10, 0, true); lh.setUint16(12, 0x21, true); lh.setUint32(14, crc, true);
+      lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+      teile.push(new Uint8Array(lh.buffer), name, data);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0, true); ch.setUint16(10, 0, true);
+      ch.setUint16(12, 0, true); ch.setUint16(14, 0x21, true); ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true);
+      ch.setUint16(28, name.length, true); ch.setUint16(30, 0, true); ch.setUint16(32, 0, true); ch.setUint16(34, 0, true); ch.setUint16(36, 0, true);
+      ch.setUint32(38, 0, true); ch.setUint32(42, offset, true);
+      zentral.push(new Uint8Array(ch.buffer), name);
+      zentralGroesse += 46 + name.length;
+      offset += 30 + name.length + data.length;
+    }
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, dateien.length, true); end.setUint16(10, dateien.length, true);
+    end.setUint32(12, zentralGroesse, true); end.setUint32(16, offset, true);
+    return new Blob([...teile, ...zentral, new Uint8Array(end.buffer)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  }
+  function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+  const SP = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  // Spalten: Nr | Start | Zweck | (Verkehrsmittel k | Wegelänge k) × anzahl | Ankunft; mindestens 3 Etappen wie in der Vorlage
+  function etappenSpalten(liste) { return Math.max(3, ...liste.map((w) => (w.etappen || []).length)); }
+  function spalten(anz, mitDauer) {
+    const kopf = ["Weg Nr.", "Startzeit", "Zweck"], breite = [7, 10, 20];
+    for (let e = 1; e <= anz; e++) { kopf.push(`Verkehrsmittel ${e}`, `Wege-\nlänge ${e}`); breite.push(18, 11); }
+    if (mitDauer) { kopf.push("Dauer"); breite.push(12); }
+    kopf.push("Ankunftszeit"); breite.push(13);
+    return { kopf, breite };
+  }
+  // Stile: 1 links, 2 rechts, 3 Kopf, 4 Zelle, 5 Uhrzeit
+  const tz = (r, t, s) => t === "" || t == null ? `<c r="${r}" s="${s}"/>` : `<c r="${r}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${esc(t)}</t></is></c>`;
+  const nz = (r, v, s) => `<c r="${r}" s="${s}"><v>${v}</v></c>`;
+
+  // opt: {mitDauer, kopf, mindestZeilen}
+  function blatt(datum, liste, erstes, opt) {
+    const n = Math.max(liste.length, opt.mindestZeilen);
+    const anz = etappenSpalten(liste);
+    const { kopf: KOPF, breite: BREITE } = spalten(anz, opt.mitDauer);
+    const ende = SP[KOPF.length - 1];
+    let x = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${ende}${2 + n}"/><sheetViews><sheetView workbookViewId="0"${erstes ? ' tabSelected="1"' : ""}/></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>`;
+    BREITE.forEach((b, i) => { x += `<col min="${i + 1}" max="${i + 1}" width="${b}" customWidth="1"/>`; });
+    x += `</cols><sheetData><row r="1" ht="24" customHeight="1">${tz("A1", `Datum: ${deDatum(datum)}`, 1)}${opt.kopf ? tz(`${ende}1`, opt.kopf, 2) : ""}</row>`;
+    x += `<row r="2" ht="80" customHeight="1">${KOPF.map((k, i) => tz(`${SP[i]}2`, k, 3)).join("")}</row>`;
+    for (let nr = 1; nr <= n; nr++) {
+      const r = nr + 2;
+      x += `<row r="${r}" ht="30" customHeight="1">${nz(`A${r}`, nr, 4)}`;
+      const w = liste[nr - 1];
+      if (w) {
+        x += nz(`B${r}`, minuten(w.start) / 1440, 5) + tz(`C${r}`, w.zweck, 4);
+        for (let e = 0; e < anz; e++) {
+          const et = (w.etappen || [])[e];
+          x += tz(`${SP[3 + e * 2]}${r}`, et ? et.vm : "", 4) + tz(`${SP[4 + e * 2]}${r}`, et ? laenge(et.m) : "", 4);
+        }
+        if (opt.mitDauer) x += tz(`${SP[KOPF.length - 2]}${r}`, dauerText(dauerVon(w)), 4);
+        x += nz(`${ende}${r}`, minuten(w.ankunft) / 1440, 5);
+      } else {
+        x += SP.slice(1, KOPF.length).map((s) => `<c r="${s}${r}" s="4"/>`).join("");
+      }
+      x += "</row>";
+    }
+    x += `</sheetData><mergeCells count="1"><mergeCell ref="A1:C1"/></mergeCells><pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+    return x;
+  }
+
+  const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="hh:mm"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Standard" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+
+  // daten: [{datum, liste}], ein Tabellenblatt pro Tag
+  function arbeitsmappe(daten, opt) {
+    const tage = daten.map((d) => d.datum);
+    const n = tage.length;
+    const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${tage.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`;
+    const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+    const wb = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView activeTab="0"/></bookViews><sheets>${tage.map((t, i) => `<sheet name="${esc(deDatum(t))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>`;
+    const wbr = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${tage.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}<Relationship Id="rId${n + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+    const dateien = [["[Content_Types].xml", ct], ["_rels/.rels", rels], ["xl/workbook.xml", wb], ["xl/_rels/workbook.xml.rels", wbr], ["xl/styles.xml", STYLES]];
+    daten.forEach((d, i) => dateien.push([`xl/worksheets/sheet${i + 1}.xml`, blatt(d.datum, d.liste, i === 0, opt)]));
+    return zip(dateien);
+  }
+
+  function csv(daten) {
+    const feld = (t) => /[;"\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+    const anz = etappenSpalten(daten.flatMap((d) => d.liste));
+    const kopf = ["Datum", "Wegnummer", "Startzeit", "Zweck"];
+    for (let e = 1; e <= anz; e++) kopf.push(`Verkehrsmittel ${e}`, `Wegelänge ${e} [m]`);
+    kopf.push("Dauer [min]", "Ankunftszeit");
+    const zeilen = [kopf.join(";")];
+    daten.forEach(({ datum: t, liste }) => liste.forEach((w, i) => {
+      const f = [deDatum(t), String(i + 1), w.start, w.zweck];
+      for (let e = 0; e < anz; e++) { const et = (w.etappen || [])[e]; f.push(et ? et.vm : "", et && et.m ? String(et.m) : ""); }
+      f.push(String(dauerVon(w)), w.ankunft);
+      zeilen.push(f.map(feld).join(";"));
+    }));
+    return new Blob(["\uFEFF" + zeilen.join("\r\n") + "\r\n"], { type: "text/csv" });
+  }
+
+  // ---------- PDF ohne Bibliothek: A4, Helvetica, Tabelle im Layout der Vorlage ----------
+  const HELV = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,556,0,222,556,333,1000,556,556,333,1000,667,333,1000,0,611,0,0,222,222,333,333,350,556,1000,333,1000,500,333,944,0,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500]; // Breiten für WinAnsi 32–255 (1/1000 pt)
+  const WIN_EXTRA = { "€": 128, "‚": 130, "„": 132, "…": 133, "–": 150, "—": 151, "‘": 145, "’": 146, "“": 147, "”": 148, "•": 149 };
+  function cp1252(t) {
+    let out = "";
+    for (const ch of String(t)) {
+      const c = ch.codePointAt(0);
+      out += String.fromCharCode(WIN_EXTRA[ch] || (c >= 32 && c < 256 ? c : 63));
+    }
+    return out;
+  }
+  function textBreite(t, gr) { let s = 0; for (const ch of cp1252(t)) { const c = ch.charCodeAt(0); s += HELV[c - 32] || 556; } return s * gr / 1000; }
+  function pdfText(t) { return "(" + cp1252(t).replace(/[\\()]/g, (m) => "\\" + m).replace(/[\x80-\xff]/g, (m) => "\\" + m.charCodeAt(0).toString(8)) + ")"; }
+  // daten: [{datum, liste}], opt: {quer, mitDauer, kopf, mindestZeilen}
+  // Gezeichnet wird immer im Querformat (B breit); das Hochformat ist dieselbe Seite verkleinert.
+  function pdfDatei(daten, opt) {
+    const RAND = 36, GR = 10;
+    const PB = opt.quer ? 841.89 : 595.28, PH = opt.quer ? 595.28 : 841.89;   // echte Seite
+    const B = 841.89;
+    const mass = (PB - 2 * RAND) / (B - 2 * RAND);
+    const H = 2 * RAND + (PH - 2 * RAND) / mass;
+    const seiten = [];
+    daten.forEach(({ datum, liste }) => {
+      const anz = etappenSpalten(liste);
+      // Spaltentitel; ab vier Etappen werden lange Titel umbrochen
+      const kopf = [["Weg", "Nr."], ["Startzeit"], ["Zweck"]], rel = [5, 9, 17];
+      for (let e = 1; e <= anz; e++) {
+        kopf.push(anz <= 3 ? [`Verkehrsmittel ${e}`] : ["Verkehrs-", `mittel ${e}`], ["Wege-", `länge ${e}`]);
+        rel.push(anz <= 3 ? 16 : 12, 9);
+      }
+      if (opt.mitDauer) { kopf.push(["Dauer"]); rel.push(12); }
+      kopf.push(anz <= 3 ? ["Ankunftszeit"] : ["Ankunfts-", "zeit"]); rel.push(anz <= 3 ? 12 : 10);
+      const summe = rel.reduce((a, b) => a + b, 0);
+      const breite = rel.map((r) => r / summe * (B - 2 * RAND));
+
+      const n = Math.max(liste.length, opt.mindestZeilen);
+      const oben = H - RAND - 22;               // Oberkante Tabelle
+      const verf = oben - RAND;
+      const kopfH = 40;
+      const zeileH = Math.max(20, Math.min(40, (verf - kopfH) / Math.max(n, 1)));
+      const proSeite = Math.max(1, Math.floor((verf - kopfH) / zeileH));
+      for (let ab = 0; ab < n; ab += proSeite) {
+        let s = `${mass.toFixed(4)} 0 0 ${mass.toFixed(4)} ${(RAND * (1 - mass)).toFixed(2)} ${(RAND * (1 - mass)).toFixed(2)} cm\n0 g 0 G ${(0.75 / mass).toFixed(2)} w\n`;
+        const text = (t, x, y, gr = GR) => { s += `BT /F1 ${gr} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td ${pdfText(t)} Tj ET\n`; };
+        const mitte = (t, x0, w, y) => {
+          let gr = GR; while (gr > 6 && textBreite(t, gr) > w - 6) gr -= 0.5;
+          let tt = String(t); while (tt.length > 1 && textBreite(tt, gr) > w - 6) tt = tt.slice(0, -2) + "…";
+          text(tt, x0 + (w - textBreite(tt, gr)) / 2, y, gr);
+        };
+        text(`Datum: ${deDatum(datum)}` + (ab ? ` (Fortsetzung)` : ""), RAND, H - RAND - 10, 11);
+        if (opt.kopf) text(opt.kopf, B - RAND - textBreite(opt.kopf, 11), H - RAND - 10, 11);
+        const bis = Math.min(n, ab + proSeite);
+        const unten = oben - kopfH - (bis - ab) * zeileH;
+        // Gitter
+        let x = RAND;
+        const xs = [x]; breite.forEach((w) => { x += w; xs.push(x); });
+        xs.forEach((xx) => { s += `${xx.toFixed(2)} ${oben.toFixed(2)} m ${xx.toFixed(2)} ${unten.toFixed(2)} l S\n`; });
+        for (let r = 0; r <= bis - ab + 1; r++) {
+          const y = r === 0 ? oben : oben - kopfH - (r - 1) * zeileH;
+          s += `${RAND} ${y.toFixed(2)} m ${(B - RAND).toFixed(2)} ${y.toFixed(2)} l S\n`;
+        }
+        // Kopfzeile
+        kopf.forEach((zeilen, i) => {
+          const y0 = oben - kopfH / 2 + (zeilen.length - 1) * 6 - 3.5;
+          zeilen.forEach((z, k) => mitte(z, xs[i], breite[i], y0 - k * 12));
+        });
+        for (let nr = ab + 1; nr <= bis; nr++) {
+          const y = oben - kopfH - (nr - ab) * zeileH + zeileH / 2 - 3.5;
+          mitte(String(nr), xs[0], breite[0], y);
+          const w = liste[nr - 1];
+          if (!w) continue;
+          const zellen = [w.start, w.zweck];
+          for (let e = 0; e < anz; e++) { const et = (w.etappen || [])[e]; zellen.push(et ? et.vm : "", et ? laenge(et.m) : ""); }
+          if (opt.mitDauer) zellen.push(dauerText(dauerVon(w)));
+          zellen.push(w.ankunft + (ueberNacht(w) ? " (+1)" : ""));
+          zellen.forEach((t, k) => { if (t) mitte(t, xs[k + 1], breite[k + 1], y); });
+        }
+        seiten.push(s);
+      }
+    });
+    // Objekte: 1 Katalog, 2 Seitenbaum, 3 Schrift, dann je Seite Seite + Inhalt
+    const obj = [];
+    obj[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+    obj[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+    const kids = [];
+    seiten.forEach((inhalt, i) => {
+      const p = 4 + i * 2, c = p + 1;
+      kids.push(`${p} 0 R`);
+      obj[p] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PB} ${PH}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${c} 0 R >>`;
+      obj[c] = `<< /Length ${inhalt.length} >>\nstream\n${inhalt}endstream`;
+    });
+    obj[2] = `<< /Type /Pages /Kids [${kids.join(" ")}] /Count ${kids.length} >>`;
+    let out = "%PDF-1.4\n%\xe2\xe3\xcf\xd3\n";
+    const off = [];
+    for (let i = 1; i < obj.length; i++) { off[i] = out.length; out += `${i} 0 obj\n${obj[i]}\nendobj\n`; }
+    const xref = out.length;
+    out += `xref\n0 ${obj.length}\n0000000000 65535 f \n` + off.slice(1).map((o) => String(o).padStart(10, "0") + " 00000 n \n").join("");
+    out += `trailer\n<< /Size ${obj.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+    const bytes = new Uint8Array(out.length);
+    for (let i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 0xff;
+    return new Blob([bytes], { type: "application/pdf" });
+  }
+
+  async function anbieten(dateiname, blob) {
+    const c = window.claude;
+    const dl = c && typeof c.use === "function" ? await c.use("downloads") : null;
+    if (dl) {
+      try { await dl.save({ filename: dateiname, data: blob }); toast("Datei gespeichert"); }
+      catch (e) {
+        if (e && e.code === "declined") return;
+        if (e && e.code === "rate_limited") { toast("Ein Speichern-Dialog ist schon offen."); return; }
+        toast("Speichern ist hier gerade nicht möglich.");
+      }
+      return;
+    }
+    // Außerhalb von Claude: auf dem Handy das Teilen-Menü (In Dateien sichern, OneDrive …), sonst normaler Download.
+    const datei = typeof File === "function" ? new File([blob], dateiname, { type: blob.type }) : null;
+    if (datei && navigator.canShare && navigator.canShare({ files: [datei] }) && /iPhone|iPad|Android/.test(navigator.userAgent)) {
+      try { await navigator.share({ files: [datei] }); } catch (e) { if (e && e.name !== "AbortError") toast("Teilen hat nicht geklappt."); }
+      return;
+    }
+    try {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = dateiname;
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    } catch (_) { toast("Speichern ist hier gerade nicht möglich."); }
+  }
+
+  // ---------- Export-Dialog ----------
+  let expTage = new Set();
+  function expOpt() {
+    const e = settings.export || {};
+    // dauerExcel: Einstellung aus einer früheren Version
+    return { format: e.format || "xlsx", quer: e.quer !== false, dauer: e.dauer ?? settings.dauerExcel ?? true, name: e.name || "", matr: e.matr || "" };
+  }
+  function expSetzen(teil) { settings = { ...settings, export: { ...expOpt(), ...teil } }; einstellungenSichern(); expZeigen(); }
+  function alleTage() { return [...new Set(wege.map((w) => w.datum))].sort().reverse(); }
+  function expTageZeichnen() {
+    const box = $("exp-tage");
+    if (!wege.length) {
+      const leer = document.createElement("div"); leer.className = "field note"; leer.textContent = "Noch keine Wege. Eine Sicherung kannst du unten laden.";
+      box.replaceChildren(leer);
+      return;
+    }
+    box.replaceChildren(...alleTage().map((t) => {
+      const liste = wegeAm(t), offen = liste.filter((w) => !vollstaendig(w)).length;
+      const row = document.createElement("label"); row.className = "field tag-zeile";
+      const wann = document.createElement("span"); wann.className = "wann";
+      const d = parseDatum(t);
+      wann.append(d.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }));
+      const sm = document.createElement("small");
+      sm.append(`${liste.length} ${liste.length === 1 ? "Weg" : "Wege"}`);
+      if (offen) { const r = document.createElement("span"); r.className = "rot"; r.textContent = ` · ${offen} unvollständig`; sm.append(r); }
+      wann.append(sm);
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.className = "switch"; cb.checked = expTage.has(t);
+      cb.addEventListener("change", () => { if (cb.checked) expTage.add(t); else expTage.delete(t); expZeigen(); });
+      row.append(wann, cb);
+      return row;
+    }));
+  }
+  function expDaten(ohneOffene) {
+    return [...expTage].sort().map((t) => ({ datum: t, liste: wegeAm(t).filter((w) => !ohneOffene || vollstaendig(w)) })).filter((d) => d.liste.length);
+  }
+  function expDateiname(daten, format) {
+    const tage = daten.map((d) => d.datum);
+    const teil = tage.length === 1 ? deDatum(tage[0]) : `${deDatum(tage[0])}-${deDatum(tage[tage.length - 1])}`;
+    return `Wegetagebuch_${teil}.${format}`;
+  }
+  function expZeigen() {
+    const o = expOpt();
+    $("exp-format").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === o.format)));
+    $("exp-ausr").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.v === "quer") === o.quer)));
+    $("exp-ausr").hidden = o.format !== "pdf";
+    $("exp-optionen").hidden = o.format === "csv";
+    $("exp-format-hint").textContent = {
+      xlsx: "Ein Tabellenblatt pro Tag im Layout der Vorlage.",
+      pdf: "A4, eine Seite pro Tag im Layout der Vorlage.",
+      csv: "Alle Wege untereinander, Längen in Metern, Dauer in Minuten. Gut zum Weiterrechnen.",
+    }[o.format];
+    $("exp-dauer").checked = o.dauer;
+    if (document.activeElement !== $("exp-name")) $("exp-name").value = o.name;
+    if (document.activeElement !== $("exp-matr")) $("exp-matr").value = o.matr;
+    if (document.activeElement !== $("exp-zeilen")) $("exp-zeilen").value = settings.mindestZeilen;
+    const daten = expDaten(false);
+    const n = daten.reduce((s, d) => s + d.liste.length, 0);
+    $("exp-go").disabled = !n;
+    $("exp-vorschau").textContent = n ? `${expDateiname(daten, o.format)} · ${n} ${n === 1 ? "Weg" : "Wege"}` : "Bitte mindestens einen Tag auswählen.";
+  }
+  function warnungZeigen(an) { $("exp-main").hidden = an; $("exp-warn").hidden = !an; }
+  function exportieren(ohneOffene) {
+    const o = expOpt();
+    if (!ohneOffene) {
+      const offen = expDaten(false).flatMap((d) => d.liste.map((w, i) => ({ d: d.datum, nr: i + 1, w })).filter((x) => !vollstaendig(x.w)));
+      if (offen.length) {
+        $("exp-warn-titel").textContent = `${offen.length} ${offen.length === 1 ? "Weg ist" : "Wege sind"} unvollständig`;
+        $("exp-warn-liste").replaceChildren(...offen.map((x) => {
+          const li = document.createElement("li");
+          li.textContent = `${deDatum(x.d).slice(0, 6)} Weg ${x.nr}: fehlt ${fehlt(x.w).join(", ")}`;
+          return li;
+        }));
+        warnungZeigen(true);
+        return;
+      }
+    }
+    warnungZeigen(false);
+    const daten = expDaten(true);
+    if (!daten.length) { toast("Keine vollständigen Wege zum Exportieren."); return; }
+    const kopf = [o.name.trim() && `Name: ${o.name.trim()}`, o.matr.trim() && `Matr.-Nr.: ${o.matr.trim()}`].filter(Boolean).join(" · ");
+    const opt = { quer: o.quer, mitDauer: o.dauer, kopf, mindestZeilen: settings.mindestZeilen };
+    const blob = o.format === "xlsx" ? arbeitsmappe(daten, opt) : o.format === "pdf" ? pdfDatei(daten, opt) : csv(daten);
+    anbieten(expDateiname(daten, o.format), blob);
+  }
+
+  $("btn-export").addEventListener("click", () => {
+    const tage = alleTage();
+    expTage = new Set(tage.includes(tag) ? [tag] : tage.slice(0, 1));
+    warnungZeigen(false);
+    expTageZeichnen();
+    expZeigen();
+    speicherHinweis();
+    $("dlg-exp").showModal();
+  });
+  $("exp-close").addEventListener("click", () => $("dlg-exp").close());
+  $("exp-alle").addEventListener("click", () => { expTage = new Set(alleTage()); expTageZeichnen(); expZeigen(); });
+  $("exp-keine").addEventListener("click", () => { expTage = new Set(); expTageZeichnen(); expZeigen(); });
+  $("exp-format").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) expSetzen({ format: b.dataset.v }); });
+  $("exp-ausr").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) expSetzen({ quer: b.dataset.v === "quer" }); });
+  $("exp-dauer").addEventListener("change", () => expSetzen({ dauer: $("exp-dauer").checked }));
+  $("exp-name").addEventListener("change", () => expSetzen({ name: $("exp-name").value.trim() }));
+  $("exp-matr").addEventListener("change", () => expSetzen({ matr: $("exp-matr").value.trim() }));
+  $("exp-zeilen").addEventListener("change", () => {
+    const n = parseInt($("exp-zeilen").value, 10);
+    settings = { ...settings, mindestZeilen: Number.isFinite(n) ? Math.min(30, Math.max(0, n)) : 10 };
+    einstellungenSichern(); expZeigen();
+  });
+  $("exp-go").addEventListener("click", () => exportieren(false));
+  $("exp-ohne").addEventListener("click", () => exportieren(true));
+  $("exp-zurueck").addEventListener("click", () => warnungZeigen(false));
+
+  // ---------- Sicherung (alle Wege und Einstellungen als JSON) ----------
+  $("bak-save").addEventListener("click", () => {
+    const daten = { app: "wegetagebuch", version: 1, gesichert: new Date().toISOString(), wege, settings: { ...settings, laufend: null } };
+    anbieten(`Wegetagebuch_Sicherung_${deDatum(heute())}.json`, new Blob([JSON.stringify(daten, null, 1)], { type: "application/json" }));
+  });
+  $("bak-load").addEventListener("click", () => $("bak-file").click());
+  $("bak-file").addEventListener("change", async () => {
+    const f = $("bak-file").files[0];
+    $("bak-file").value = "";
+    if (!f) return;
+    let daten;
+    try { daten = JSON.parse(await f.text()); } catch (_) { toast("Die Datei ist keine gültige Sicherung."); return; }
+    if (!daten || daten.app !== "wegetagebuch" || !Array.isArray(daten.wege)) { toast("Die Datei ist keine Wegetagebuch-Sicherung."); return; }
+    // Zusammenführen: Wege mit gleicher ID werden ersetzt, neue kommen dazu; Auswahllisten werden vereinigt.
+    const s2 = daten.settings || {};
+    const vereint = (a, b) => [...new Set([...(a || []), ...(b || [])])];
+    settings = {
+      ...settings,
+      zwecke: vereint(settings.zwecke, s2.zwecke),
+      verkehrsmittel: vereint(settings.verkehrsmittel, s2.verkehrsmittel),
+      laengen: vereint(settings.laengen, s2.laengen),
+      export: { ...(s2.export || {}), ...(settings.export || {}) },
+    };
+    einstellungenSichern();
+    const neu = daten.wege.filter((w) => w && w.id && w.datum);
+    for (const w of neu) await wegSichern(w);
+    expTageZeichnen(); expZeigen();
+    toast(`${neu.length} ${neu.length === 1 ? "Weg" : "Wege"} aus der Sicherung geladen`);
+  });
+
+  // ---------- Start ----------
+  cacheLesen();
+  speicherHinweis();
+  render();
+  speicherVerbinden();
+  // Außerhalb von Claude den Browser bitten, die Daten nicht automatisch zu löschen.
+  if (!window.claude && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+})();
+</script>
+
+<script>
+  // Offline nutzbar: kleiner Service Worker (siehe sw.js)
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
