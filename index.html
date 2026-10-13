@@ -54,8 +54,9 @@ body {
   background: var(--bg); color: var(--ink);
   font-family: var(--font-body); font-size: 16px; line-height: 1.45;
   padding: 0 16px; -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;   /* kein Zoom durch Doppeltippen */
 }
-.app { max-width: 560px; margin: 0 auto; padding-block: 12px 120px; display: flex; flex-direction: column; gap: 18px; }
+.app { max-width: 560px; margin: 0 auto; padding-block: calc(28px + env(safe-area-inset-top, 0px)) 120px; min-height: 100vh; display: flex; flex-direction: column; gap: 18px; }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -80,20 +81,35 @@ button { cursor: pointer; }
 .mini { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 4px 9px; font-size: 0.85rem; font-weight: 500; flex: none; }
 .mini.platz { visibility: hidden; }
 
-/* Tagesnavigation */
-.daynav { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; }
-.daynav .arrow { height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 1.2rem; }
-.daypick { position: relative; text-align: center; padding: 6px 0; border-radius: 12px; }
-.daypick .wd { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-.daypick .dt { font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; }
-.daypick input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
-.chips::-webkit-scrollbar { display: none; }
-.chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; }
-.chip[aria-current="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.chip .n { color: var(--muted); margin-left: 4px; }
-.chip[aria-current="true"] .n { color: inherit; opacity: 0.7; }
-.chip .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); margin-left: 5px; vertical-align: 1px; }
+/* Tagesnavigation: Wischen schiebt die Seiten mit dem Finger, Tippen wechselt den Tag, Tippen aufs Datum öffnet den Kalender, Doppeltippen springt zu heute */
+.tagkopf { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 2px; }
+.tagkopf .wd { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+/* Datum als deutlicher Knopf: Kalender-Symbol, Datum, Pfeil nach unten */
+.daypick { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 8px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); user-select: none; -webkit-user-select: none; }
+.daypick svg { width: 20px; height: 20px; color: var(--accent); flex: none; }
+.daypick .dt { font-family: var(--font-display); font-weight: 600; font-size: 1.2rem; }
+.daypick .pfeil { width: 7px; height: 7px; margin: -4px 2px 0 2px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); }
+@media (prefers-reduced-motion: no-preference) { .daypick { transition: transform 0.12s ease; } .daypick:active { transform: scale(0.97); } }
+
+.pager { flex: 1; display: flex; margin: 0 -16px; overflow: hidden; touch-action: pan-y; }
+.track { flex: none; display: flex; align-items: flex-start; width: 300%; transform: translateX(-33.3333%); }
+.seite { width: 33.3333%; padding: 0 16px; display: flex; flex-direction: column; gap: 18px; }
+.seite.neben { max-height: 100vh; overflow: hidden; }
+
+/* Kalender */
+dialog.kal { height: fit-content; max-width: 360px; margin: auto; border-radius: 18px; background: var(--surface); padding: 14px 14px 16px; }
+.kal-kopf { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin-bottom: 8px; }
+.kal-kopf h2 { margin: 0; text-align: center; font-family: var(--font-display); font-size: 1.1rem; }
+.kal-kopf button { height: 40px; border: 0; border-radius: 10px; background: none; font-size: 1.3rem; color: var(--ink); }
+.kal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+.kal-grid .wt { font-size: 0.72rem; color: var(--muted); font-weight: 600; padding: 4px 0; }
+.kal-tag { position: relative; height: 42px; border: 0; border-radius: 10px; background: none; color: var(--ink); font-variant-numeric: tabular-nums; }
+.kal-tag.heute { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.kal-tag[aria-current="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.kal-tag i { position: absolute; left: 50%; bottom: 5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--accent); }
+.kal-tag i.rot { background: var(--danger); }
+.kal-tag[aria-current="true"] i { background: var(--accent-ink); }
+.kal-tag[aria-current="true"] i.rot { background: var(--danger); box-shadow: 0 0 0 1.5px var(--accent-ink); }
 
 /* Wegeliste */
 .offen-hinweis { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--danger); color: var(--danger); background: var(--surface); border-radius: var(--radius); padding: 10px 14px; font-weight: 600; }
@@ -182,7 +198,7 @@ legend { padding: 0; margin-bottom: 8px; }
 .warnbox ul { margin: 0; padding-left: 18px; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .trip, .btn, .chip { transition: transform 0.12s ease; }
+  .trip, .btn { transition: transform 0.12s ease; }
   .trip:active, .btn:active { transform: scale(0.985); }
 }
 </style>
@@ -193,18 +209,8 @@ legend { padding: 0; margin-bottom: 8px; }
 <div class="app">
   <button type="button" class="offen-hinweis" id="offen-hinweis" hidden><span id="offen-text"></span><span aria-hidden="true">›</span></button>
 
-  <nav class="daynav" aria-label="Tag wählen">
-    <button class="arrow" id="prev" aria-label="Vorheriger Tag">‹</button>
-    <label class="daypick">
-      <div class="wd" id="day-wd"></div>
-      <div class="dt" id="day-dt"></div>
-      <input type="date" id="day-input" aria-label="Datum wählen">
-    </label>
-    <button class="arrow" id="next" aria-label="Nächster Tag">›</button>
-  </nav>
-  <div class="chips" id="chips" aria-label="Tage mit Einträgen"></div>
-
-  <ul class="trips" id="trips"></ul>
+  <!-- Vortag, Tag, Folgetag nebeneinander; der Finger schiebt die ganze Reihe -->
+  <div class="pager" id="pager"><div class="track" id="track"></div></div>
 
 </div>
 
@@ -215,6 +221,15 @@ legend { padding: 0; margin-bottom: 8px; }
   <button class="fab second" id="fab"><span aria-hidden="true">＋</span> Weg</button>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
+
+<dialog class="kal" id="dlg-kal" aria-labelledby="kal-titel">
+  <div class="kal-kopf">
+    <button type="button" id="kal-prev" aria-label="Vorheriger Monat">‹</button>
+    <h2 id="kal-titel"></h2>
+    <button type="button" id="kal-next" aria-label="Nächster Monat">›</button>
+  </div>
+  <div class="kal-grid" id="kal-grid"></div>
+</dialog>
 
 <dialog id="dlg-weg" aria-labelledby="weg-title">
   <form class="sheet" id="form-weg" novalidate>
@@ -393,7 +408,13 @@ legend { padding: 0; margin-bottom: 8px; }
       .sort((a, b) => a.datum.localeCompare(b.datum) || (minuten(a.start) || 0) - (minuten(b.start) || 0));
   }
   function wegeAm(datum) { return sortiert(wege.filter((w) => w.datum === datum)); }
-  function farbe(vm) { const i = vmListe().indexOf(vm); return `var(--m${i < 0 ? 6 : (i % 5) + 1})`; }
+  // Feste Farben für die Vorauswahl, eigene Verkehrsmittel reihum
+  function farbe(vm) {
+    const fest = VERKEHRSMITTEL.indexOf(vm);
+    if (fest >= 0) return `var(--m${fest + 1})`;
+    const i = vmListe().filter((x) => !VERKEHRSMITTEL.includes(x)).indexOf(vm);
+    return `var(--m${i < 0 ? 6 : [5, 6, 2, 3, 4, 1][i % 6]})`;
+  }
 
   let toastTimer;
   function toast(text) {
@@ -492,40 +513,33 @@ legend { padding: 0; margin-bottom: 8px; }
   }
 
   // ---------- Darstellung ----------
-  function render() {
-    const d = parseDatum(tag);
-    $("day-wd").textContent = d.toLocaleDateString("de-DE", { weekday: "long" }) + (tag === heute() ? " · heute" : "");
-    $("day-dt").textContent = d.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
-    $("day-input").value = tag;
+  // Eine Seite: Datum oben, darunter die Wege des Tages. Nur die mittlere Seite ist bedienbar.
+  function seiteBauen(datum, mitte) {
+    const seite = document.createElement("section");
+    seite.className = "seite" + (mitte ? "" : " neben");
+    if (!mitte) seite.inert = true;
+    const d = parseDatum(datum);
+    const kopf = document.createElement("div"); kopf.className = "tagkopf";
+    const knopf = document.createElement("button"); knopf.type = "button"; knopf.className = "daypick";
+    knopf.setAttribute("aria-label", "Kalender öffnen");
+    knopf.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
+    const wd = document.createElement("div"); wd.className = "wd";
+    wd.textContent = d.toLocaleDateString("de-DE", { weekday: "long" }) + (datum === heute() ? " · heute" : "");
+    const dt = document.createElement("div"); dt.className = "dt";
+    dt.textContent = d.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+    const pfeil = document.createElement("span"); pfeil.className = "pfeil"; pfeil.setAttribute("aria-hidden", "true");
+    knopf.append(dt, pfeil);
+    kopf.append(wd, knopf);
+    const ul = document.createElement("ul"); ul.className = "trips";
+    if (mitte) { knopf.id = "daypick"; wd.id = "day-wd"; dt.id = "day-dt"; ul.id = "trips"; }
+    seite.append(kopf, ul);
 
-    // Tage mit Einträgen
-    const zaehler = {};
-    wege.forEach((w) => { zaehler[w.datum] = (zaehler[w.datum] || 0) + 1; });
-    const tage = Object.keys(zaehler).sort().reverse();
-    const chips = $("chips");
-    chips.replaceChildren(...tage.map((t) => {
-      const b = document.createElement("button");
-      b.className = "chip"; b.type = "button";
-      b.setAttribute("aria-current", t === tag ? "true" : "false");
-      b.append(deDatum(t).slice(0, 6));
-      const n = document.createElement("span"); n.className = "n"; n.textContent = zaehler[t];
-      b.append(n);
-      if (wege.some((w) => w.datum === t && !vollstaendig(w))) {
-        const d = document.createElement("span"); d.className = "dot"; d.setAttribute("aria-label", "unvollständig"); b.append(d);
-      }
-      b.addEventListener("click", () => { tag = t; render(); });
-      return b;
-    }));
-    chips.hidden = tage.length === 0;
+    const liste = wegeAm(datum);
 
-    const liste = wegeAm(tag);
-
-    const ul = $("trips");
-    ul.replaceChildren();
     if (!liste.length) {
       const li = document.createElement("li"); li.className = "empty";
       const s = document.createElement("strong"); s.textContent = "Noch keine Wege an diesem Tag";
-      li.append(s, "Tippe beim Losgehen auf „Weg starten“ und beim Ankommen auf „Weg beenden“. Vergessene Wege trägst du mit „＋ Weg“ nach.");
+      li.append(s, "Tippe beim Losgehen auf „Weg starten“ und beim Ankommen auf „Weg beenden“. Vergessene Wege trägst du mit „＋ Weg“ nach. Zu anderen Tagen wischst du nach links oder rechts.");
       ul.append(li);
     }
     liste.forEach((w, i) => {
@@ -557,6 +571,11 @@ legend { padding: 0; margin-bottom: 8px; }
       ul.append(li);
     });
 
+    return seite;
+  }
+
+  function render() {
+    $("track").replaceChildren(...[-1, 0, 1].map((k) => seiteBauen(verschiebe(tag, k), k === 0)));
     const offen = offeneWege().length;
     $("offen-hinweis").hidden = !offen;
     $("offen-text").textContent = `${offen} ${offen === 1 ? "Weg" : "Wege"} unvollständig`;
@@ -598,7 +617,7 @@ legend { padding: 0; margin-bottom: 8px; }
     if (!erster) return;
     tag = erster.datum;
     render();
-    const el = document.querySelector(`.trip[data-id="${erster.id}"]`);
+    const el = document.querySelector(`#trips .trip[data-id="${erster.id}"]`);
     if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
   });
 
@@ -606,16 +625,15 @@ legend { padding: 0; margin-bottom: 8px; }
   let legs = []; // [{vm, m, neuModus, neu}]  m = Länge in Metern, neu = eigene Länge in km als Text
   const neueEtappe = () => ({ vm: "", m: null, neuModus: false, neu: "" });
 
-  // Eigene Zwecke: gespeicherte Liste plus alles, was schon in Wegen vorkommt.
+  // Zwecke und Verkehrsmittel: feste Vorauswahl, eigene Einträge und alles, was schon in Wegen vorkommt – alphabetisch.
+  const ZWECKE = ["Uni", "nach Hause", "Einkaufen", "Essen"];
+  const VERKEHRSMITTEL = ["zu Fuß", "Stadtbahn", "Fahrrad", "Zug"];
+  const alphabetisch = (liste) => [...new Set(liste.filter(Boolean))].sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
   function zweckListe() {
-    const liste = [...(settings.zwecke || [])];
-    wege.forEach((w) => { if (w.zweck && !liste.includes(w.zweck)) liste.push(w.zweck); });
-    return liste;
+    return alphabetisch([...ZWECKE, ...(settings.zwecke || []), ...wege.map((w) => w.zweck)]);
   }
   function vmListe() {
-    const liste = [...(settings.verkehrsmittel || [])];
-    wege.forEach((w) => (w.etappen || []).forEach((e) => { if (e.vm && !liste.includes(e.vm)) liste.push(e.vm); }));
-    return liste;
+    return alphabetisch([...VERKEHRSMITTEL, ...(settings.verkehrsmittel || []), ...wege.flatMap((w) => (w.etappen || []).map((e) => e.vm))]);
   }
 
   // Wegelängen in Metern: sinnvolle Vorauswahl plus eigene und schon verwendete Werte
@@ -646,7 +664,6 @@ legend { padding: 0; margin-bottom: 8px; }
       const sel = document.createElement("select"); sel.id = `f-vm-${i}`;
       const vms = vmListe();
       optionen(sel, vms, i === 0 ? "Bitte wählen" : "–", leg.vm);
-      if (!vms.length && !leg.vm) sel.value = ANDERE;   // erste Nutzung: gleich eintippen
       f1.append(s1, sel);
 
       const f2 = document.createElement("label"); f2.className = "field";
@@ -768,7 +785,6 @@ legend { padding: 0; margin-bottom: 8px; }
     zeitBerechnen();
     const zwecke = zweckListe();
     optionen($("f-zweck"), zwecke, "Bitte wählen", w ? w.zweck : "");
-    if (!zwecke.length) $("f-zweck").value = ANDERE;   // erste Nutzung: gleich eintippen
     $("f-zweck-frei").value = "";
     $("f-zweck-frei-row").hidden = $("f-zweck").value !== ANDERE;
     legs = w && w.etappen && w.etappen.length
@@ -836,9 +852,146 @@ legend { padding: 0; margin-bottom: 8px; }
   });
 
   // ---------- Navigation ----------
-  $("prev").addEventListener("click", () => { tag = verschiebe(tag, -1); render(); });
-  $("next").addEventListener("click", () => { tag = verschiebe(tag, 1); render(); });
-  $("day-input").addEventListener("change", (e) => { if (e.target.value) { tag = e.target.value; render(); } });
+
+  // ---------- Tag wechseln ----------
+  // Die Reihe Vortag | Tag | Folgetag folgt dem Finger; beim Loslassen rastet sie auf einen Tag ein.
+  const track = $("track");
+  const pos = (schritt, dx = 0) => `translateX(calc(${-33.3333 * (1 + schritt)}% + ${dx}px))`;
+  let zug = null, rastet = false, klickSperre = 0;
+
+  function einrasten(schritt) {
+    rastet = true;
+    const animiert = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    track.style.transition = animiert ? "transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)" : "none";
+    track.style.transform = pos(schritt);
+    const fertig = () => {
+      track.style.transition = "none";
+      if (schritt) { tag = verschiebe(tag, schritt); render(); }
+      track.style.transform = pos(0);
+      rastet = false;
+    };
+    if (animiert) setTimeout(fertig, 310); else fertig();
+  }
+  function tagWechseln(schritt) { if (!rastet) einrasten(schritt); }
+
+  const pager = $("pager");
+  pager.addEventListener("touchstart", (e) => {
+    if (rastet || e.touches.length !== 1) { zug = null; return; }
+    const t = e.touches[0];
+    zug = { x: t.clientX, y: t.clientY, achse: null, dx: 0, spur: [[t.clientX, e.timeStamp]] };
+    // Nachbarseiten auf Höhe des sichtbaren Ausschnitts bringen, falls nach unten gescrollt
+    const ver = Math.max(0, window.scrollY - pager.offsetTop);
+    track.querySelectorAll(".neben").forEach((n) => { n.style.transform = ver ? `translateY(${ver}px)` : ""; });
+  }, { passive: true });
+  pager.addEventListener("touchmove", (e) => {
+    if (!zug) return;
+    const t = e.touches[0];
+    const dx = t.clientX - zug.x, dy = t.clientY - zug.y;
+    if (!zug.achse && Math.hypot(dx, dy) > 8) zug.achse = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    if (zug.achse !== "x") return;
+    e.preventDefault();
+    zug.dx = dx;
+    zug.spur.push([t.clientX, e.timeStamp]);
+    if (zug.spur.length > 6) zug.spur.shift();
+    track.style.transition = "none";
+    track.style.transform = pos(0, dx);
+  }, { passive: false });
+  const loslassen = () => {
+    if (!zug) return;
+    const z = zug; zug = null;
+    if (z.achse !== "x") return;
+    klickSperre = Date.now() + 400;
+    const [x0, t0] = z.spur[0], [x1, t1] = z.spur[z.spur.length - 1];
+    const v = t1 > t0 ? (x1 - x0) / (t1 - t0) : 0;   // px pro ms
+    const breite = pager.clientWidth;
+    let schritt = 0;
+    if (z.dx < -breite * 0.3 || (v < -0.35 && z.dx < -20)) schritt = 1;
+    else if (z.dx > breite * 0.3 || (v > 0.35 && z.dx > 20)) schritt = -1;
+    einrasten(schritt);
+  };
+  pager.addEventListener("touchend", loslassen);
+  pager.addEventListener("touchcancel", loslassen);
+  // Nach dem Ziehen keinen Weg versehentlich öffnen
+  pager.addEventListener("click", (e) => { if (Date.now() < klickSperre) { e.stopPropagation(); e.preventDefault(); } }, true);
+  // Am Computer: Pfeiltasten
+  document.addEventListener("keydown", (e) => {
+    if (document.querySelector("dialog[open]") || e.target.closest("input, select, textarea")) return;
+    if (e.key === "ArrowLeft") tagWechseln(-1);
+    if (e.key === "ArrowRight") tagWechseln(1);
+  });
+  // Kein Zoomen mit zwei Fingern (Safari)
+  document.addEventListener("gesturestart", (e) => e.preventDefault());
+
+  // Tippen aufs Datum: Kalender, Doppeltippen: zurück zu heute
+  let tippZeit = 0, tippTimer = null;
+  track.addEventListener("click", (e) => {
+    if (!e.target.closest("#daypick")) return;
+    const jetzt = Date.now();
+    if (jetzt - tippZeit < 350) {
+      clearTimeout(tippTimer); tippZeit = 0;
+      if (tag !== heute()) {
+        const schritt = tag < heute() ? 1 : -1;
+        tag = verschiebe(heute(), -schritt);
+        render();
+        tagWechseln(schritt);
+      }
+      return;
+    }
+    tippZeit = jetzt;
+    tippTimer = setTimeout(kalenderOeffnen, 350);
+  });
+
+  // ---------- Kalender ----------
+  let kalMonat = null;   // "YYYY-MM"
+  function kalenderOeffnen() {
+    kalMonat = tag.slice(0, 7);
+    kalenderZeichnen();
+    $("dlg-kal").showModal();
+  }
+  function kalenderZeichnen() {
+    const [y, m] = kalMonat.split("-").map(Number);
+    $("kal-titel").textContent = new Date(y, m - 1, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+    const grid = $("kal-grid");
+    grid.replaceChildren(...["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((t) => {
+      const d = document.createElement("div"); d.className = "wt"; d.textContent = t; return d;
+    }));
+    const versatz = (new Date(y, m - 1, 1).getDay() + 6) % 7;   // Montag = 0
+    for (let i = 0; i < versatz; i++) grid.append(document.createElement("span"));
+    const tage = new Date(y, m, 0).getDate();
+    for (let d = 1; d <= tage; d++) {
+      const iso = `${kalMonat}-${pad(d)}`;
+      const b = document.createElement("button"); b.type = "button"; b.className = "kal-tag" + (iso === heute() ? " heute" : "");
+      b.textContent = d;
+      b.setAttribute("aria-current", iso === tag ? "true" : "false");
+      const amTag = wegeAm(iso);
+      if (amTag.length) {
+        const punkt = document.createElement("i");
+        if (amTag.some((w) => !vollstaendig(w))) punkt.className = "rot";
+        b.append(punkt);
+        b.setAttribute("aria-label", `${d}., ${amTag.length} ${amTag.length === 1 ? "Weg" : "Wege"}`);
+      }
+      b.addEventListener("click", () => { tag = iso; $("dlg-kal").close(); render(); });
+      grid.append(b);
+    }
+  }
+  function kalBlaettern(schritt) {
+    const [y, m] = kalMonat.split("-").map(Number);
+    const d = new Date(y, m - 1 + schritt, 1);
+    kalMonat = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+    kalenderZeichnen();
+  }
+  $("kal-prev").addEventListener("click", () => kalBlaettern(-1));
+  $("kal-next").addEventListener("click", () => kalBlaettern(1));
+  let kalWisch = null;
+  $("dlg-kal").addEventListener("touchstart", (e) => { kalWisch = e.touches[0].clientX; }, { passive: true });
+  $("dlg-kal").addEventListener("touchend", (e) => {
+    if (kalWisch == null) return;
+    const dx = e.changedTouches[0].clientX - kalWisch;
+    kalWisch = null;
+    if (Math.abs(dx) > 60) kalBlaettern(dx < 0 ? 1 : -1);
+  });
+  // Tippen neben den Kalender schließt ihn
+  $("dlg-kal").addEventListener("click", (e) => { if (e.target === $("dlg-kal")) $("dlg-kal").close(); });
   $("fab").addEventListener("click", () => formOeffnen(null));
 
   // ---------- Excel (.xlsx) ohne Bibliothek: XML-Teile + ZIP ohne Kompression ----------
