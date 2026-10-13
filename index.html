@@ -154,8 +154,10 @@ dialog::backdrop { background: rgba(0,0,0,0.35); }
 .sheet { display: flex; flex-direction: column; height: 100%; }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; border-bottom: 1px solid var(--line); background: var(--surface); }
 .sheet-head .kopf-platz { width: 72px; }
+.sheet-fuss { display: flex; justify-content: flex-end; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--surface); }
+.sichern { height: 50px; padding: 0 30px; border-radius: 999px; font-size: 1rem; }
 .sheet-head h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
-.sheet-body { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+.sheet-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 legend { padding: 0; margin-bottom: 8px; }
 .group { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 14px; }
@@ -246,7 +248,7 @@ legend { padding: 0; margin-bottom: 8px; }
     <div class="sheet-head">
       <button type="button" class="link" id="weg-cancel">Abbrechen</button>
       <h2 id="weg-title">Neuer Weg</h2>
-      <button type="submit" class="link" id="weg-save">Sichern</button>
+      <span class="kopf-platz" aria-hidden="true"></span>
     </div>
     <div class="sheet-body">
       <fieldset>
@@ -280,6 +282,9 @@ legend { padding: 0; margin-bottom: 8px; }
           <button type="button" class="btn" id="weg-delete-no">Behalten</button>
         </div>
       </div>
+    </div>
+    <div class="sheet-fuss">
+      <button type="submit" class="btn primary sichern" id="weg-save">Sichern</button>
     </div>
   </form>
 </dialog>
@@ -761,12 +766,9 @@ legend { padding: 0; margin-bottom: 8px; }
       f2.append(s2, frei);
       f2.hidden = sel.value !== ANDERE;
 
-      // Wegelänge als eigener Block: Auswahlliste, eigene Werte über "+ Neu" (in km)
-      const fs2 = document.createElement("fieldset");
-      const lg2 = document.createElement("legend"); lg2.className = "label"; lg2.textContent = `Wegelänge ${i + 1}`;
-      const grp2 = document.createElement("div"); grp2.className = "group";
+      // Wegelänge im selben Block: Auswahlliste, eigene Werte über "+ Neu" (in km)
       const f3 = document.createElement("label"); f3.className = "field";
-      const s3 = document.createElement("span"); s3.textContent = "Länge";
+      const s3 = document.createElement("span"); s3.textContent = "Wegelänge";
       const lsel = document.createElement("select"); lsel.id = `f-len-${i}`;
       lsel.add(new Option("–", ""));
       laengeListe().forEach((m) => lsel.add(new Option(laenge(m), String(m))));
@@ -782,8 +784,6 @@ legend { padding: 0; margin-bottom: 8px; }
       lenBox.append(inp, unit);
       f4.append(s4, lenBox);
       f4.hidden = lsel.value !== ANDERE;
-      grp2.append(f3, f4);
-      fs2.append(lg2, grp2);
       lsel.addEventListener("change", () => {
         leg.neuModus = lsel.value === ANDERE;
         f4.hidden = !leg.neuModus;
@@ -800,9 +800,9 @@ legend { padding: 0; margin-bottom: 8px; }
       frei.addEventListener("input", () => { leg.vm = frei.value.trim(); pruefen(); });
       inp.addEventListener("input", () => { leg.neu = inp.value; pruefen(); });
 
-      grp.append(f1, f2);
+      grp.append(f1, f2, f3, f4);
       fs.append(lg, grp);
-      box.append(fs, fs2);
+      box.append(fs);
     });
   }
 
@@ -947,26 +947,42 @@ legend { padding: 0; margin-bottom: 8px; }
   const pos = (schritt, dx = 0) => `translateX(calc(${-33.3333 * (1 + schritt)}% + ${dx}px))`;
   let zug = null, rastet = false, klickSperre = 0;
 
+  let rastTimer = null, rastSchritt = 0;
   function einrasten(schritt) {
-    rastet = true;
+    rastet = true; rastSchritt = schritt;
     const animiert = !matchMedia("(prefers-reduced-motion: reduce)").matches;
-    track.style.transition = animiert ? "transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)" : "none";
+    track.style.transition = animiert ? "transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)" : "none";
     track.style.transform = pos(schritt);
     const fertig = () => {
+      rastTimer = null;
       track.style.transition = "none";
       if (schritt) { tag = verschiebe(tag, schritt); render(); }
       track.style.transform = pos(0);
       rastet = false;
     };
-    if (animiert) setTimeout(fertig, 310); else fertig();
+    if (animiert) rastTimer = setTimeout(fertig, 230); else fertig();
   }
-  function tagWechseln(schritt) { if (!rastet) einrasten(schritt); }
+  // Greift der Finger, während ein Tag noch einrastet: Bewegung anhalten, wo sie gerade ist,
+  // den Tageswechsel sofort übernehmen und den Versatz zurückgeben, damit nahtlos weitergezogen wird.
+  function abfangen() {
+    if (!rastet) return 0;
+    clearTimeout(rastTimer); rastTimer = null;
+    const breite = pager.clientWidth;
+    let versatz = new DOMMatrixReadOnly(getComputedStyle(track).transform).m41 + breite;
+    track.style.transition = "none";
+    if (rastSchritt) { tag = verschiebe(tag, rastSchritt); render(); versatz += rastSchritt * breite; }
+    track.style.transform = pos(0, versatz);
+    rastet = false;
+    return versatz;
+  }
+  function tagWechseln(schritt) { abfangen(); einrasten(schritt); }
 
   const pager = $("pager");
   pager.addEventListener("touchstart", (e) => {
-    if (rastet || e.touches.length !== 1) { zug = null; return; }
+    if (e.touches.length !== 1) { zug = null; return; }
     const t = e.touches[0];
-    zug = { x: t.clientX, y: t.clientY, achse: null, dx: 0, spur: [[t.clientX, e.timeStamp]] };
+    const versatz = abfangen();
+    zug = { x: t.clientX - versatz, y: t.clientY, achse: versatz ? "x" : null, dx: versatz, spur: [[t.clientX, e.timeStamp]] };
     // Nachbarseiten auf Höhe des sichtbaren Ausschnitts bringen, falls nach unten gescrollt
     const ver = Math.max(0, window.scrollY - pager.offsetTop);
     track.querySelectorAll(".neben").forEach((n) => { n.style.transform = ver ? `translateY(${ver}px)` : ""; });
@@ -992,10 +1008,14 @@ legend { padding: 0; margin-bottom: 8px; }
     const [x0, t0] = z.spur[0], [x1, t1] = z.spur[z.spur.length - 1];
     const v = t1 > t0 ? (x1 - x0) / (t1 - t0) : 0;   // px pro ms
     const breite = pager.clientWidth;
-    let schritt = 0;
-    if (z.dx < -breite * 0.3 || (v < -0.35 && z.dx < -20)) schritt = 1;
-    else if (z.dx > breite * 0.3 || (v > 0.35 && z.dx > 20)) schritt = -1;
-    einrasten(schritt);
+    // Wie am Homescreen: ein schneller Wisch geht zur nächsten Seite in Wischrichtung,
+    // sonst entscheidet, wie weit die Seite schon verschoben ist.
+    const f = -z.dx / breite;   // Anteil, um den die Seite vorwärts verschoben ist
+    let schritt;
+    if (v < -0.35) schritt = Math.ceil(f);
+    else if (v > 0.35) schritt = Math.floor(f);
+    else schritt = f > 0.3 ? 1 : f < -0.3 ? -1 : 0;
+    einrasten(Math.max(-1, Math.min(1, schritt)));
   };
   pager.addEventListener("touchend", loslassen);
   pager.addEventListener("touchcancel", loslassen);
