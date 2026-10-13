@@ -91,6 +91,8 @@ dialog.kal { height: fit-content; max-width: 360px; margin: auto; border-radius:
 .kal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
 .kal-grid .wt { font-size: 0.72rem; color: var(--muted); font-weight: 600; padding: 4px 0; }
 .kal-tag { position: relative; height: 42px; border: 0; border-radius: 10px; background: none; color: var(--ink); font-variant-numeric: tabular-nums; }
+.kal-tag:disabled { color: var(--muted); opacity: 0.4; }
+.kal-kopf button:disabled { opacity: 0.25; }
 .kal-tag.heute { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .kal-tag[aria-current="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .kal-tag i { position: absolute; left: 50%; bottom: 5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--accent); }
@@ -114,6 +116,14 @@ dialog.kal { height: fit-content; max-width: 360px; margin: auto; border-radius:
 .trip .zweck.klein { font-size: 0.85rem; }
 .trip.offen { border-color: var(--danger); box-shadow: inset 3px 0 0 var(--danger); }
 .trip.offen .nr { background: var(--danger); color: var(--surface); }
+/* Auswahlmodus: markierte Wege grün umrandet, Haken statt Nummer */
+.trip.markiert { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+body.auswahl .trip .nr { font-size: 0; background: none; border: 2px solid var(--muted); box-sizing: border-box; }
+body.auswahl .trip.markiert .nr { background: var(--accent); border-color: var(--accent); }
+body.auswahl .trip.markiert .nr::after { content: ""; width: 6px; height: 11px; border: solid var(--accent-ink); border-width: 0 2.5px 2.5px 0; transform: translate(-1px, -2px) rotate(45deg); }
+.auswahl-info { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+.dock.auswahl-dock { grid-template-columns: 1fr 1fr 1fr; }
+.fab.rot { background: var(--danger); color: #fff; }
 .trip .zweck.leer, .trip .fehlt-text { color: var(--danger); }
 .trip .fehlt-text { display: block; font-size: 0.8rem; font-weight: 500; }
 /* Verkehrsmittel als Symbol, Länge darunter; ab 4 Etappen in eigener Zeile */
@@ -142,12 +152,6 @@ dialog.kal { height: fit-content; max-width: 360px; margin: auto; border-radius:
 .toast button:empty { display: none; }
 
 /* Menü beim Gedrückthalten eines Weges */
-dialog.menue { height: fit-content; max-width: 340px; margin: auto auto calc(16px + env(safe-area-inset-bottom, 0px)); border-radius: 18px; background: var(--surface); padding: 6px; }
-.menue-titel { padding: 10px 12px 8px; font-size: 0.85rem; color: var(--muted); text-align: center; border-bottom: 1px solid var(--line); }
-.menue button { display: block; width: 100%; border: 0; background: none; color: var(--ink); text-align: center; padding: 14px; font-size: 1rem; font-weight: 500; border-radius: 12px; }
-.menue button + button { border-top: 1px solid var(--line); border-radius: 0; }
-.menue button.rot { color: var(--danger); font-weight: 600; }
-.menue button.abbrechen { margin-top: 6px; border-top: 0; background: var(--bg); border-radius: 12px; font-weight: 600; }
 
 /* Blätter (Formular, Export) */
 dialog { border: 0; padding: 0; width: 100%; max-width: 560px; max-height: 100%; height: 100%; margin: 0 auto; background: var(--bg); color: var(--ink); }
@@ -205,6 +209,17 @@ legend { padding: 0; margin-bottom: 8px; }
 .griff svg { width: 18px; height: 18px; }
 .leg-kopf .ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
 .leg-kopf .ic svg { width: 17px; height: 17px; }
+/* Verkehrsmittel als Piktogramm-Auswahl */
+.vm-wahl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 10px 0; }
+.vm-knopf { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px 5px; border: 1px solid transparent; border-radius: 12px; background: none; color: var(--muted); font-size: 0.72rem; cursor: pointer; }
+.vm-knopf .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+.vm-knopf .ic svg { width: 21px; height: 21px; }
+.vm-knopf.an { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--ink); font-weight: 600; }
+.vm-knopf.an .ic { background: color-mix(in srgb, var(--c) 30%, transparent); }
+.vm-wahl.fehlt .vm-knopf { border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+.vm-wahl ~ .field:not([hidden]) { border-top: 1px solid var(--line); }
+.muell.frage { width: auto; padding: 0 12px; color: #fff; background: var(--danger); font-size: 0.85rem; font-weight: 600; }
+.leg-block { scroll-margin-top: 8px; }
 /* Wegelänge: Knopf im Formular, Doppelrad unten */
 .muell { margin-left: auto; width: 34px; height: 34px; border: 0; background: none; color: var(--muted); display: grid; place-items: center; border-radius: 10px; }
 .muell svg { width: 19px; height: 19px; }
@@ -248,15 +263,14 @@ legend { padding: 0; margin-bottom: 8px; }
   <button class="fab laeuft" id="fab-ende" hidden aria-live="polite"><span class="zeile1"><span class="pulse" aria-hidden="true"></span>Weg beenden</span><span class="zeile2" id="laeuft-text"></span></button>
   <button class="fab second" id="fab"><span aria-hidden="true">＋</span> Weg</button>
 </div>
+<div class="auswahl-info" id="auswahl-info" hidden aria-live="polite"></div>
+<div class="dock auswahl-dock" id="auswahl-dock" hidden>
+  <button class="fab second" id="auswahl-abbrechen">Abbrechen</button>
+  <button class="fab second" id="auswahl-kopieren">Auf heute</button>
+  <button class="fab rot" id="auswahl-loeschen">Löschen</button>
+</div>
 <div class="toast" id="toast" role="status" hidden><span id="toast-text"></span><button type="button" id="toast-aktion"></button></div>
 
-<dialog class="menue" id="dlg-menue" aria-labelledby="menue-titel">
-  <div class="menue-titel" id="menue-titel"></div>
-  <button type="button" id="menue-bearbeiten">Bearbeiten</button>
-  <button type="button" id="menue-duplizieren">Auf heute kopieren</button>
-  <button type="button" id="menue-loeschen" class="rot">Löschen</button>
-  <button type="button" id="menue-abbrechen" class="abbrechen">Abbrechen</button>
-</dialog>
 
 <dialog class="kal" id="dlg-kal" aria-labelledby="kal-titel">
   <div class="kal-kopf">
@@ -455,7 +469,7 @@ legend { padding: 0; margin-bottom: 8px; }
     zug:    { farbe: "#f06a6a", svg: '<path d="M3 16V7h6v9"/><path d="M2 6.5h8"/><path d="M5 9.5h2v2.5H5z"/><path d="M9 10h9.5a1.5 1.5 0 0 1 1.5 1.5V16H3"/><path d="M15 10V6.5M13.8 5.5h2.4"/><path d="M20 16l1.8 2.5"/><circle cx="6" cy="18.6" r="2.2"/><circle cx="12" cy="18.6" r="2.2"/><circle cx="17" cy="18.6" r="1.5"/>' },
     bus:    { farbe: "#b98ae0", svg: '<rect x="4.5" y="3.5" width="15" height="15" rx="2.5"/><path d="M4.5 11h15M4.5 7h15M8 15h.01M16 15h.01M7 18.5V21M17 18.5V21"/>' },
     auto:   { farbe: "#9aa8a2", svg: '<path d="M4 16v-3.5l2-5a2 2 0 0 1 1.9-1.3h8.2a2 2 0 0 1 1.9 1.3l2 5V16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 12.5h16M7.5 14.5h.01M16.5 14.5h.01M6 17v2M18 17v2"/>' },
-    moped:  { farbe: "#4fc4cf", svg: '<path d="M2 15.5c0-3.8 2.4-5.7 6-5.7 3 0 4.5 1.8 4.8 4"/><path d="M4 7.8h7M5 7.8v2"/><path d="M2 15.5h7.5l3 1h4.5"/><path d="M17 16.5c.6-2.3 2.4-3.2 5-3.2"/><path d="M21 13.3c-.8-3.3-2.5-5.8-4.5-7.8"/><path d="M14 6.6l4.5-2"/><circle cx="6" cy="18.6" r="1.9"/><circle cx="19.5" cy="18.6" r="1.9"/>' },
+    moped:  { farbe: "#c08a5a", svg: '<path d="M2 15.5c0-3.8 2.4-5.7 6-5.7 3 0 4.5 1.8 4.8 4"/><path d="M4 7.8h7M5 7.8v2"/><path d="M2 15.5h7.5l3 1h4.5"/><path d="M17 16.5c.6-2.3 2.4-3.2 5-3.2"/><path d="M21 13.3c-.8-3.3-2.5-5.8-4.5-7.8"/><path d="M14 6.6l4.5-2"/><circle cx="6" cy="18.6" r="1.9"/><circle cx="19.5" cy="18.6" r="1.9"/>' },
     andere: { farbe: "#9aa8a2", svg: '<circle cx="12" cy="12" r="7.5"/><path d="M9 12h6M13 9.5l2.5 2.5-2.5 2.5"/>' },
   };
   // Reihenfolge zählt: „Motorrad“ ist ein Moped, kein Fahrrad; „Stadtbahn“ keine Eisenbahn.
@@ -670,7 +684,7 @@ legend { padding: 0; margin-bottom: 8px; }
         dauer.append(wert, einheit);
       }
       b.append(nr, dauer, zeiten, zweck, route);
-      gedruecktHalten(b, w, i + 1);
+      gedruecktHalten(b, w);
       li.append(b);
       ul.append(li);
     });
@@ -699,55 +713,77 @@ legend { padding: 0; margin-bottom: 8px; }
   function render() {
     $("track").replaceChildren(...[-1, 0, 1].map((k) => seiteBauen(verschiebe(tag, k), k === 0)));
     einpassen();
+    auswahlZeigen();
     const offen = offeneWege().length;
     $("offen-hinweis").hidden = !offen;
     $("offen-text").textContent = `${offen} ${offen === 1 ? "Weg" : "Wege"} unvollständig`;
     laufendZeigen();
   }
 
-  // ---------- Gedrückt halten: Menü mit Bearbeiten, Kopieren, Löschen ----------
-  let menueWeg = null, klickNachMenue = 0;
-  function gedruecktHalten(b, w, nummer) {
+  // ---------- Gedrückt halten: Auswahlmodus mit Mehrfachauswahl ----------
+  // Halten markiert den Weg; danach markiert jeder Tipp weitere Wege oder hebt die Markierung auf.
+  const auswahl = new Set();
+  let klickNachHalten = 0;
+  function gedruecktHalten(b, w) {
     let timer = null, start = null;
     const abbrechen = () => { clearTimeout(timer); timer = null; };
+    const halten = () => {
+      klickNachHalten = Date.now() + 700;   // das Loslassen nach dem Halten zählt nicht als Tipp
+      if (navigator.vibrate) navigator.vibrate(10);
+      auswahl.add(w.id);
+      auswahlZeigen();
+    };
     b.addEventListener("touchstart", (e) => {
       if (e.touches.length !== 1) return;
       start = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      timer = setTimeout(() => { timer = null; menueOeffnen(w, nummer); }, 500);
+      timer = setTimeout(() => { timer = null; halten(); }, 500);
     }, { passive: true });
     b.addEventListener("touchmove", (e) => {
       if (timer && Math.hypot(e.touches[0].clientX - start.x, e.touches[0].clientY - start.y) > 10) abbrechen();
     }, { passive: true });
     b.addEventListener("touchend", abbrechen);
     b.addEventListener("touchcancel", abbrechen);
-    b.addEventListener("contextmenu", (e) => { e.preventDefault(); abbrechen(); menueOeffnen(w, nummer); });   // Rechtsklick am Computer
-    b.addEventListener("click", () => { if (Date.now() > klickNachMenue) formOeffnen(w); });
+    b.addEventListener("contextmenu", (e) => { e.preventDefault(); abbrechen(); halten(); });   // Rechtsklick am Computer
+    b.addEventListener("click", () => {
+      if (Date.now() < klickNachHalten) return;
+      if (!auswahl.size) { formOeffnen(w); return; }
+      if (auswahl.has(w.id)) auswahl.delete(w.id); else auswahl.add(w.id);
+      auswahlZeigen();
+    });
   }
-  function menueOeffnen(w, nummer) {
-    if ($("dlg-menue").open) return;
-    menueWeg = w;
-    klickNachMenue = Date.now() + 700;   // das Loslassen nach dem Halten öffnet nicht noch das Formular
-    if (navigator.vibrate) navigator.vibrate(10);
-    $("menue-titel").textContent = `Weg ${nummer}` + (w.zweck ? ` · ${w.zweck}` : "") + (w.start ? ` · ${w.start}` : "");
-    $("menue-duplizieren").hidden = false;
-    $("dlg-menue").showModal();
+  function auswahlZeigen() {
+    for (const id of [...auswahl]) if (!wege.some((w) => w.id === id)) auswahl.delete(id);
+    const an = auswahl.size > 0;
+    document.body.classList.toggle("auswahl", an);
+    document.querySelectorAll("#trips .trip").forEach((t) => {
+      t.classList.toggle("markiert", auswahl.has(t.dataset.id));
+      t.setAttribute("aria-pressed", an ? String(auswahl.has(t.dataset.id)) : "false");
+    });
+    document.querySelector(".dock:not(.auswahl-dock)").hidden = an;
+    $("auswahl-dock").hidden = !an;
+    $("auswahl-info").hidden = !an;
+    $("auswahl-info").textContent = `${auswahl.size} ausgewählt`;
   }
-  function menueSchliessen() { $("dlg-menue").close(); }
-  $("menue-abbrechen").addEventListener("click", menueSchliessen);
-  $("dlg-menue").addEventListener("click", (e) => { if (e.target === $("dlg-menue")) menueSchliessen(); });
-  $("menue-bearbeiten").addEventListener("click", () => { menueSchliessen(); formOeffnen(menueWeg); });
-  $("menue-duplizieren").addEventListener("click", () => {
-    menueSchliessen();
-    const kopie = { ...menueWeg, id: neueId(), datum: heute(), etappen: (menueWeg.etappen || []).map((e) => ({ ...e })), erstellt: Date.now() };
+  function auswahlBeenden() { auswahl.clear(); auswahlZeigen(); }
+  $("auswahl-abbrechen").addEventListener("click", auswahlBeenden);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && auswahl.size && !document.querySelector("dialog[open]")) auswahlBeenden(); });
+  $("auswahl-kopieren").addEventListener("click", () => {
+    const kopien = sortiert(wege.filter((w) => auswahl.has(w.id)))
+      .map((w, k) => ({ ...w, id: neueId(), datum: heute(), etappen: (w.etappen || []).map((e) => ({ ...e })), erstellt: Date.now() + k }));
+    auswahl.clear();
     tag = heute();
-    wegSichern(kopie);
-    toast("Weg auf heute kopiert", { text: "Rückgängig", fn: () => wegLoeschen(kopie.id) });
+    kopien.forEach(wegSichern);
+    auswahlZeigen();
+    toast(kopien.length === 1 ? "Weg auf heute kopiert" : `${kopien.length} Wege auf heute kopiert`,
+      { text: "Rückgängig", fn: () => kopien.forEach((k) => wegLoeschen(k.id)) });
   });
-  $("menue-loeschen").addEventListener("click", () => {
-    menueSchliessen();
-    const weg = menueWeg;
-    wegLoeschen(weg.id);
-    toast("Weg gelöscht", { text: "Rückgängig", fn: () => { tag = weg.datum; wegSichern(weg); } });
+  $("auswahl-loeschen").addEventListener("click", () => {
+    const weg = wege.filter((w) => auswahl.has(w.id));
+    auswahl.clear();
+    weg.forEach((w) => wegLoeschen(w.id));
+    auswahlZeigen();
+    toast(weg.length === 1 ? "Weg gelöscht" : `${weg.length} Wege gelöscht`,
+      { text: "Rückgängig", fn: () => { tag = weg[0].datum; weg.forEach(wegSichern); } });
   });
 
   // ---------- Laufender Weg ----------
@@ -821,6 +857,10 @@ legend { padding: 0; margin-bottom: 8px; }
   const MUELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 1.8h7a2 2 0 0 0 2-1.8l1-12M9 7V4.8A.8.8 0 0 1 9.8 4h4.4a.8.8 0 0 1 .8.8V7"/></svg>';
   const GRIFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
 
+  // Feste Verkehrsmittel mit Piktogramm; alles andere läuft über „Sonstige“
+  const VM_KNOEPFE = [["zu Fuß", "fuss"], ["Fahrrad", "rad"], ["Tram", "tram"], ["Bus", "bus"], ["Zug", "zug"], ["Auto", "auto"], ["Moped", "moped"]];
+  const SONSTIGE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 12h.01M12 12h.01M18 12h.01" stroke-width="3"/></svg>';
+
   function legsZeichnen() {
     const box = $("legs");
     box.replaceChildren();
@@ -842,7 +882,14 @@ legend { padding: 0; margin-bottom: 8px; }
       piktoZeigen();
       const muell = document.createElement("button"); muell.type = "button"; muell.className = "muell";
       muell.setAttribute("aria-label", `Verkehrsmittel ${i + 1} löschen`); muell.innerHTML = MUELL_SVG;
+      let frageTimer = null;
       muell.addEventListener("click", () => {
+        if (!muell.classList.contains("frage")) {   // erster Tipp fragt nach, zweiter löscht
+          muell.classList.add("frage"); muell.textContent = "Löschen?";
+          frageTimer = setTimeout(() => { muell.classList.remove("frage"); muell.innerHTML = MUELL_SVG; }, 3000);
+          return;
+        }
+        clearTimeout(frageTimer);
         if (legs.length > 1) legs.splice(i, 1); else legs = [neueEtappe()];
         legsZeichnen();
         pruefen();
@@ -850,19 +897,36 @@ legend { padding: 0; margin-bottom: 8px; }
       kopf.append(griff, ic, titel, muell);
 
       const grp = document.createElement("div"); grp.className = "group";
-      const f1 = document.createElement("label"); f1.className = "field";
-      const s1 = document.createElement("span"); s1.textContent = "Verkehrsmittel";
-      const sel = document.createElement("select"); sel.id = `f-vm-${i}`;
-      const vms = vmListe();
-      optionen(sel, vms, i === 0 ? "Bitte wählen" : "–", leg.vm);
-      f1.append(s1, sel);
+      const wahl = document.createElement("div"); wahl.className = "vm-wahl"; wahl.id = `f-vm-${i}`;
+      wahl.setAttribute("role", "radiogroup"); wahl.setAttribute("aria-label", "Verkehrsmittel");
+      const standard = VM_KNOEPFE.map(([n]) => n);
+      const knoepfe = [...VM_KNOEPFE, ["Sonstige", null]].map(([name, key]) => {
+        const k = document.createElement("button"); k.type = "button"; k.className = "vm-knopf";
+        k.dataset.vm = key ? name : ANDERE; k.setAttribute("role", "radio");
+        const p = key ? PIKTO[key] : PIKTO.andere;
+        k.style.setProperty("--c", p.farbe);
+        k.innerHTML = `<span class="ic">${key ? piktoSvg(p) : SONSTIGE_SVG}</span>`;
+        k.append(name);
+        wahl.append(k);
+        return k;
+      });
+      let sonstige = !!leg.vm && !standard.includes(leg.vm);
+      const wahlZeigen = () => knoepfe.forEach((k) => {
+        const an = k.dataset.vm === ANDERE ? sonstige : (!sonstige && k.dataset.vm === leg.vm);
+        k.classList.toggle("an", an); k.setAttribute("aria-checked", an);
+      });
 
+      // Sonstige: freier Name, eigene frühere Einträge werden vorgeschlagen
       const f2 = document.createElement("label"); f2.className = "field";
-      const s2 = document.createElement("span"); s2.textContent = "Neues Verkehrsmittel";
-      const frei = document.createElement("input"); frei.type = "text"; frei.id = `f-vmfrei-${i}`; frei.placeholder = "z. B. Tram"; frei.autocomplete = "off";
-      frei.value = vms.includes(leg.vm) ? "" : leg.vm;
-      f2.append(s2, frei);
-      f2.hidden = sel.value !== ANDERE;
+      const s2 = document.createElement("span"); s2.textContent = "Sonstiges";
+      const frei = document.createElement("input"); frei.type = "text"; frei.id = `f-vmfrei-${i}`; frei.placeholder = "z. B. E-Scooter"; frei.autocomplete = "off";
+      const dl = document.createElement("datalist"); dl.id = `vm-vorschlaege-${i}`;
+      dl.append(...vmListe().filter((v) => !standard.includes(v)).map((v) => new Option(v)));
+      frei.setAttribute("list", dl.id);
+      frei.value = sonstige ? leg.vm : "";
+      f2.append(s2, frei, dl);
+      f2.hidden = !sonstige;
+      wahlZeigen();
 
       // Wegelänge: Auswahlliste mit festen Stufen (alte, krumme Werte bleiben wählbar)
       const f3 = document.createElement("label"); f3.className = "field";
@@ -874,16 +938,17 @@ legend { padding: 0; margin-bottom: 8px; }
       lenSel.addEventListener("change", () => { leg.m = Number(lenSel.value) || null; pruefen(); });
       f3.append(s3, lenSel);
 
-      sel.addEventListener("change", () => {
-        if (sel.value === ANDERE) { f2.hidden = false; leg.vm = frei.value.trim(); frei.focus(); }
-        else { f2.hidden = true; leg.vm = sel.value; }
-        if (sel.value === "" && i > 0) { legs.splice(i, 1); legsZeichnen(); }
-        else piktoZeigen();
-        pruefen();
+      wahl.addEventListener("click", (e) => {
+        const k = e.target.closest(".vm-knopf"); if (!k) return;
+        sonstige = k.dataset.vm === ANDERE;
+        f2.hidden = !sonstige;
+        leg.vm = sonstige ? frei.value.trim() : k.dataset.vm;
+        wahlZeigen(); piktoZeigen(); pruefen();
+        if (sonstige) frei.focus();
       });
       frei.addEventListener("input", () => { leg.vm = frei.value.trim(); piktoZeigen(); pruefen(); });
 
-      grp.append(f1, f2, f3);
+      grp.append(wahl, f2, f3);
       block.append(kopf, grp);
       box.append(block);
 
@@ -977,7 +1042,7 @@ legend { padding: 0; margin-bottom: 8px; }
     markiere($("z-ankunft"), !$("f-ankunft").value);
     for (const id of ["f-start", "f-dauer", "f-ankunft"]) $(id).classList.toggle("leer", !$(id).value);
     markiere($("f-zweck").closest(".field"), !zweckWert());
-    markiere($("f-vm-0") && $("f-vm-0").closest(".field"), !l0.vm);
+    markiere($("f-vm-0"), !l0.vm);
     markiere($("f-len-0") && $("f-len-0").closest(".field"), !lenOk);
     $("f-plus1").hidden = !($("f-start").value && $("f-ankunft").value && $("f-ankunft").value.slice(0, 5) < $("f-start").value.slice(0, 5));
     $("add-leg").hidden = legs.length >= MAX_ETAPPEN || !legs[legs.length - 1].vm;
@@ -1023,8 +1088,50 @@ legend { padding: 0; margin-bottom: 8px; }
   ["start", "dauer", "ankunft"].forEach((k) => $(ZEITFELD[k]).addEventListener("input", () => zeitGeaendert(k)));
   $("f-start-jetzt").addEventListener("click", () => { $("f-start").value = uhrzeit(new Date()); zeitGeaendert("start"); });
   $("f-ankunft-jetzt").addEventListener("click", () => { $("f-ankunft").value = uhrzeit(new Date()); zeitGeaendert("ankunft"); });
-  $("add-leg").addEventListener("click", () => { if (legs.length < MAX_ETAPPEN) { legs.push(neueEtappe()); legsZeichnen(); pruefen(); } });
+  $("add-leg").addEventListener("click", () => {
+    if (legs.length >= MAX_ETAPPEN) return;
+    legs.push(neueEtappe()); legsZeichnen(); pruefen();
+    $("legs").lastElementChild.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   $("weg-cancel").addEventListener("click", () => $("dlg-weg").close());
+
+  // Zurückwischen: das Formular folgt dem Finger nach rechts; weit genug oder schnell genug schließt es wie „Abbrechen“.
+  (() => {
+    const dlg = $("dlg-weg");
+    let start = null, richtung = null, letzte = null;
+    const zurueck = (animiert) => { dlg.style.transition = animiert ? "transform 0.2s ease" : "none"; dlg.style.transform = ""; };
+    dlg.addEventListener("touchstart", (e) => {
+      if (e.touches.length !== 1 || e.target.closest(".griff")) { start = null; return; }
+      const t = e.touches[0];
+      start = { x: t.clientX, y: t.clientY }; richtung = null; letzte = { x: t.clientX, zeit: e.timeStamp, v: 0 };
+    }, { passive: true });
+    dlg.addEventListener("touchmove", (e) => {
+      if (!start) return;
+      const t = e.touches[0], dx = t.clientX - start.x, dy = t.clientY - start.y;
+      if (!richtung) {
+        if (Math.hypot(dx, dy) < 10) return;
+        richtung = dx > 0 && Math.abs(dx) > 1.5 * Math.abs(dy) ? "x" : "y";
+      }
+      if (richtung !== "x") return;
+      e.preventDefault();
+      const zeit = e.timeStamp;
+      if (zeit > letzte.zeit) letzte = { x: t.clientX, zeit, v: (t.clientX - letzte.x) / (zeit - letzte.zeit) };
+      dlg.style.transition = "none";
+      dlg.style.transform = `translateX(${Math.max(0, dx)}px)`;
+    }, { passive: false });
+    const ende = (e) => {
+      if (!start || richtung !== "x") { start = null; return; }
+      const dx = (e.changedTouches[0] || {}).clientX - start.x;
+      start = null;
+      if (dx > dlg.offsetWidth * 0.35 || letzte.v > 0.5) {
+        dlg.style.transition = "transform 0.2s ease";
+        dlg.style.transform = "translateX(100%)";
+        setTimeout(() => { dlg.close(); zurueck(false); }, 200);
+      } else zurueck(true);
+    };
+    dlg.addEventListener("touchend", ende);
+    dlg.addEventListener("touchcancel", () => { start = null; zurueck(true); });
+  })();
   // Löschen im Formular: mit Nachfrage in der unteren Leiste
   const loeschFrage = (an) => { $("weg-confirm").hidden = !an; $("weg-delete").hidden = an; $("weg-save").hidden = an; };
   $("weg-delete").addEventListener("click", () => loeschFrage(true));
@@ -1073,6 +1180,7 @@ legend { padding: 0; margin-bottom: 8px; }
 
   let rastTimer = null, rastSchritt = 0;
   function einrasten(schritt) {
+    while (schritt > 0 && verschiebe(tag, schritt) > heute()) schritt--;   // nicht in die Zukunft
     rastet = true; rastSchritt = schritt;
     const animiert = !matchMedia("(prefers-reduced-motion: reduce)").matches;
     track.style.transition = animiert ? "transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)" : "none";
@@ -1103,7 +1211,7 @@ legend { padding: 0; margin-bottom: 8px; }
 
   const pager = $("pager");
   pager.addEventListener("touchstart", (e) => {
-    if (e.touches.length !== 1) { zug = null; return; }
+    if (e.touches.length !== 1 || auswahl.size) { zug = null; return; }   // im Auswahlmodus bleibt der Tag fest
     const t = e.touches[0];
     const versatz = abfangen();
     zug = { x: t.clientX - versatz, y: t.clientY, achse: versatz ? "x" : null, dx: versatz, spur: [[t.clientX, e.timeStamp]] };
@@ -1118,11 +1226,11 @@ legend { padding: 0; margin-bottom: 8px; }
     if (!zug.achse && Math.hypot(dx, dy) > 8) zug.achse = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
     if (zug.achse !== "x") return;
     e.preventDefault();
-    zug.dx = dx;
+    zug.dx = dx < 0 && tag >= heute() ? dx / 4 : dx;   // heute: nach vorn nur ein Stück nachgeben
     zug.spur.push([t.clientX, e.timeStamp]);
     if (zug.spur.length > 6) zug.spur.shift();
     track.style.transition = "none";
-    track.style.transform = pos(0, dx);
+    track.style.transform = pos(0, zug.dx);
   }, { passive: false });
   const loslassen = () => {
     if (!zug) return;
@@ -1157,7 +1265,7 @@ legend { padding: 0; margin-bottom: 8px; }
   // Tippen aufs Datum: Kalender, Doppeltippen: zurück zu heute
   let tippZeit = 0, tippTimer = null;
   track.addEventListener("click", (e) => {
-    if (!e.target.closest("#daypick")) return;
+    if (!e.target.closest("#daypick") || auswahl.size) return;
     const jetzt = Date.now();
     if (jetzt - tippZeit < 350) {
       clearTimeout(tippTimer); tippZeit = 0;
@@ -1183,6 +1291,7 @@ legend { padding: 0; margin-bottom: 8px; }
   function kalenderZeichnen() {
     const [y, m] = kalMonat.split("-").map(Number);
     $("kal-titel").textContent = new Date(y, m - 1, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+    $("kal-next").disabled = kalMonat >= heute().slice(0, 7);
     const grid = $("kal-grid");
     grid.replaceChildren(...["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((t) => {
       const d = document.createElement("div"); d.className = "wt"; d.textContent = t; return d;
@@ -1194,6 +1303,7 @@ legend { padding: 0; margin-bottom: 8px; }
       const iso = `${kalMonat}-${pad(d)}`;
       const b = document.createElement("button"); b.type = "button"; b.className = "kal-tag" + (iso === heute() ? " heute" : "");
       b.textContent = d;
+      b.disabled = iso > heute() && !wegeAm(iso).length;
       b.setAttribute("aria-current", iso === tag ? "true" : "false");
       const amTag = wegeAm(iso);
       if (amTag.length) {
@@ -1209,7 +1319,9 @@ legend { padding: 0; margin-bottom: 8px; }
   function kalBlaettern(schritt) {
     const [y, m] = kalMonat.split("-").map(Number);
     const d = new Date(y, m - 1 + schritt, 1);
-    kalMonat = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+    const neu = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+    if (neu > heute().slice(0, 7)) return;
+    kalMonat = neu;
     kalenderZeichnen();
   }
   $("kal-prev").addEventListener("click", () => kalBlaettern(-1));
