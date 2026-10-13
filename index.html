@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Wegetagebuch</title>
 <meta name="description" content="Wege erfassen und als Excel, PDF oder CSV exportieren.">
-<meta name="theme-color" content="#0b6e4f">
+<meta name="theme-color" content="#101614">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Wegetagebuch">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -19,33 +19,20 @@
 <style>
 /* Eine schmale Spalte; jeder Weg ist eine Karte mit seinen Etappen als Stationen. */
 :root {
-  --bg: #eef1ef;
-  --surface: #ffffff;
-  --ink: #17231f;
-  --muted: #5b6863;
-  --line: #d3dad6;
-  --accent: #0b6e4f;
-  --accent-ink: #ffffff;
-  --accent-soft: #dcefe7;
-  --danger: #b3261e;
-  --m1: #0b6e4f; --m2: #2f6fb0; --m3: #c7861a; --m4: #8a4fb0; --m5: #c2513c; --m6: #5b6863;
+  /* Die App ist immer dunkel. */
+  --bg: #101614;
+  --surface: #19211e;
+  --ink: #e6ece9;
+  --muted: #9aa8a2;
+  --line: #2c3833;
+  --accent: #4cc39a;
+  --accent-ink: #062a1e;
+  --accent-soft: #1d3a30;
+  --danger: #f2867e;
   --font-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
   --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --radius: 14px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #101614; --surface: #19211e; --ink: #e6ece9; --muted: #9aa8a2; --line: #2c3833;
-    --accent: #4cc39a; --accent-ink: #062a1e; --accent-soft: #1d3a30; --danger: #f2867e;
-    --m1: #4cc39a; --m2: #6ea8e6; --m3: #e3b15a; --m4: #b98ae0; --m5: #e98b75; --m6: #9aa8a2;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #101614; --surface: #19211e; --ink: #e6ece9; --muted: #9aa8a2; --line: #2c3833;
-  --accent: #4cc39a; --accent-ink: #062a1e; --accent-soft: #1d3a30; --danger: #f2867e;
-  --m1: #4cc39a; --m2: #6ea8e6; --m3: #e3b15a; --m4: #b98ae0; --m5: #e98b75; --m6: #9aa8a2;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -113,22 +100,27 @@ dialog.kal { height: fit-content; max-width: 360px; margin: auto; border-radius:
 
 /* Wegeliste */
 .offen-hinweis { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--danger); color: var(--danger); background: var(--surface); border-radius: var(--radius); padding: 10px 14px; font-weight: 600; }
-.trips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.trip { width: 100%; text-align: left; display: grid; grid-template-columns: 34px 1fr; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
-.trip .nr { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; }
-.trip .body { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.trip .head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
-.trip .zweck { font-weight: 600; }
-.trip .zeit { font-size: 0.9rem; color: var(--muted); }
+.trips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+/* Wegkarte: Nummer | Start/Ankunft | Zweck | Verkehrsmittel-Symbole | Dauer */
+.trip { width: 100%; text-align: left; display: grid; grid-template-columns: 30px 44px minmax(0, 1fr) auto auto; gap: 4px 9px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 7px 12px 7px 10px; min-height: 56px; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.trip .nr { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; }
+.trip .zeiten { display: flex; flex-direction: column; font-size: 0.8rem; line-height: 1.25; }
+.trip .zeiten span + span { color: var(--muted); }
+.trip .zweck { font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.trip .dauer { font-size: 0.84rem; color: var(--muted); white-space: nowrap; }
 .trip.offen { border-color: var(--danger); box-shadow: inset 3px 0 0 var(--danger); }
 .trip.offen .nr { background: var(--danger); color: var(--surface); }
 .trip .zweck.leer, .trip .fehlt-text { color: var(--danger); }
-.trip .fehlt-text { font-size: 0.82rem; font-weight: 600; }
-.route { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 0.86rem; }
-.leg { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 6px; border-radius: 6px; background: var(--bg); }
-.leg + .leg::before { content: "›"; position: absolute; left: -11px; top: 50%; transform: translateY(-52%); color: var(--muted); font-size: 0.9rem; }
-.leg i { width: 8px; height: 8px; border-radius: 50%; }
-.leg .len { color: var(--muted); }
+.trip .fehlt-text { display: block; font-size: 0.8rem; font-weight: 500; }
+/* Verkehrsmittel als Symbol, Länge darunter; ab 4 Etappen in eigener Zeile */
+.legs { display: flex; align-items: center; gap: 2px; }
+.legs .pf { color: var(--muted); font-size: 0.7rem; margin-top: -13px; }
+.vm { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 30px; }
+.vm .ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
+.vm .ic svg { width: 17px; height: 17px; }
+.vm small { font-size: 0.68rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.trip.viele .nr, .trip.viele .zeiten { grid-row: span 2; }
+.trip.viele .legs { grid-column: 3 / -1; grid-row: 2; flex-wrap: wrap; }
 .empty { text-align: center; color: var(--muted); padding: 28px 12px; border: 1px dashed var(--line); border-radius: var(--radius); }
 .empty strong { display: block; color: var(--ink); font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 4px; }
 
@@ -143,7 +135,17 @@ dialog.kal { height: fit-content; max-width: 360px; margin: auto; border-radius:
 .fab.laeuft .zeile2 { font-size: 0.78rem; font-weight: 500; opacity: 0.92; }
 .fab.laeuft .pulse { width: 8px; height: 8px; border-radius: 50%; background: #fff; }
 @media (prefers-reduced-motion: no-preference) { .fab.laeuft .pulse { animation: puls 1.6s ease-in-out infinite; } }
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 10px; font-size: 0.9rem; max-width: calc(100% - 32px); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 14px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(0,0,0,0.4); padding: 8px 8px 8px 14px; border-radius: 12px; font-size: 0.9rem; max-width: calc(100% - 32px); white-space: nowrap; }
+.toast button { border: 0; background: none; color: var(--accent); font-weight: 700; padding: 6px 8px; }
+.toast button:empty { display: none; }
+
+/* Menü beim Gedrückthalten eines Weges */
+dialog.menue { height: fit-content; max-width: 340px; margin: auto auto calc(16px + env(safe-area-inset-bottom, 0px)); border-radius: 18px; background: var(--surface); padding: 6px; }
+.menue-titel { padding: 10px 12px 8px; font-size: 0.85rem; color: var(--muted); text-align: center; border-bottom: 1px solid var(--line); }
+.menue button { display: block; width: 100%; border: 0; background: none; color: var(--ink); text-align: center; padding: 14px; font-size: 1rem; font-weight: 500; border-radius: 12px; }
+.menue button + button { border-top: 1px solid var(--line); border-radius: 0; }
+.menue button.rot { color: var(--danger); font-weight: 600; }
+.menue button.abbrechen { margin-top: 6px; border-top: 0; background: var(--bg); border-radius: 12px; font-weight: 600; }
 
 /* Blätter (Formular, Export) */
 dialog { border: 0; padding: 0; width: 100%; max-width: 560px; max-height: 100%; height: 100%; margin: 0 auto; background: var(--bg); color: var(--ink); }
@@ -220,7 +222,15 @@ legend { padding: 0; margin-bottom: 8px; }
   <button class="fab laeuft" id="fab-ende" hidden aria-live="polite"><span class="zeile1"><span class="pulse" aria-hidden="true"></span>Weg beenden</span><span class="zeile2" id="laeuft-text"></span></button>
   <button class="fab second" id="fab"><span aria-hidden="true">＋</span> Weg</button>
 </div>
-<div class="toast" id="toast" role="status" hidden></div>
+<div class="toast" id="toast" role="status" hidden><span id="toast-text"></span><button type="button" id="toast-aktion"></button></div>
+
+<dialog class="menue" id="dlg-menue" aria-labelledby="menue-titel">
+  <div class="menue-titel" id="menue-titel"></div>
+  <button type="button" id="menue-bearbeiten">Bearbeiten</button>
+  <button type="button" id="menue-duplizieren">Auf heute kopieren</button>
+  <button type="button" id="menue-loeschen" class="rot">Löschen</button>
+  <button type="button" id="menue-abbrechen" class="abbrechen">Abbrechen</button>
+</dialog>
 
 <dialog class="kal" id="dlg-kal" aria-labelledby="kal-titel">
   <div class="kal-kopf">
@@ -408,21 +418,50 @@ legend { padding: 0; margin-bottom: 8px; }
       .sort((a, b) => a.datum.localeCompare(b.datum) || (minuten(a.start) || 0) - (minuten(b.start) || 0));
   }
   function wegeAm(datum) { return sortiert(wege.filter((w) => w.datum === datum)); }
-  // Feste Farben für die Vorauswahl, eigene Verkehrsmittel reihum
-  function farbe(vm) {
-    const fest = VERKEHRSMITTEL.indexOf(vm);
-    if (fest >= 0) return `var(--m${fest + 1})`;
-    const i = vmListe().filter((x) => !VERKEHRSMITTEL.includes(x)).indexOf(vm);
-    return `var(--m${i < 0 ? 6 : [5, 6, 2, 3, 4, 1][i % 6]})`;
+  // Piktogramme: feste Symbole und Farben; eigene Verkehrsmittel werden über ihren Namen zugeordnet.
+  const PIKTO = {
+    fuss:   { farbe: "#4cc39a", svg: '<circle cx="13.5" cy="4.2" r="1.9"/><path d="M12.8 8.2L11.3 14"/><path d="M11.3 14L8.3 20.5"/><path d="M11.3 14l3 2.6.8 3.9"/><path d="M12.6 9l-3.4 2.2-.8 2.8"/><path d="M12.6 9l2.4 2.6 2.8.9"/>' },
+    rad:    { farbe: "#6ea8e6", svg: '<circle cx="6" cy="16" r="3.6"/><circle cx="18" cy="16" r="3.6"/><path d="M6 16l3.5-7h6L18 16"/><path d="M12 16l-2.5-7M8 6.5h3M15 9l-1-3h2.5"/>' },
+    tram:   { farbe: "#f2c94c", svg: '<path d="M4.5 9.5h15l2 7.5h-19z"/><path d="M12 2.5l3.3 3.5L12 9.5 8.7 6z"/><path d="M6.3 12h2.7v2.5H6.3zM10.65 12h2.7v2.5h-2.7zM15 12h2.7v2.5H15z"/><circle cx="6" cy="19.8" r="1"/><circle cx="9" cy="19.8" r="1"/><circle cx="15" cy="19.8" r="1"/><circle cx="18" cy="19.8" r="1"/>' },
+    zug:    { farbe: "#f06a6a", svg: '<path d="M3 16V7h6v9"/><path d="M2 6.5h8"/><path d="M5 9.5h2v2.5H5z"/><path d="M9 10h9.5a1.5 1.5 0 0 1 1.5 1.5V16H3"/><path d="M15 10V6.5M13.8 5.5h2.4"/><path d="M20 16l1.8 2.5"/><circle cx="6" cy="18.6" r="2.2"/><circle cx="12" cy="18.6" r="2.2"/><circle cx="17" cy="18.6" r="1.5"/>' },
+    bus:    { farbe: "#b98ae0", svg: '<rect x="4.5" y="3.5" width="15" height="15" rx="2.5"/><path d="M4.5 11h15M4.5 7h15M8 15h.01M16 15h.01M7 18.5V21M17 18.5V21"/>' },
+    auto:   { farbe: "#9aa8a2", svg: '<path d="M4 16v-3.5l2-5a2 2 0 0 1 1.9-1.3h8.2a2 2 0 0 1 1.9 1.3l2 5V16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 12.5h16M7.5 14.5h.01M16.5 14.5h.01M6 17v2M18 17v2"/>' },
+    moped:  { farbe: "#4fc4cf", svg: '<path d="M2 15.5c0-3.8 2.4-5.7 6-5.7 3 0 4.5 1.8 4.8 4"/><path d="M4 7.8h7M5 7.8v2"/><path d="M2 15.5h7.5l3 1h4.5"/><path d="M17 16.5c.6-2.3 2.4-3.2 5-3.2"/><path d="M21 13.3c-.8-3.3-2.5-5.8-4.5-7.8"/><path d="M14 6.6l4.5-2"/><circle cx="6" cy="18.6" r="1.9"/><circle cx="19.5" cy="18.6" r="1.9"/>' },
+    andere: { farbe: "#9aa8a2", svg: '<circle cx="12" cy="12" r="7.5"/><path d="M9 12h6M13 9.5l2.5 2.5-2.5 2.5"/>' },
+  };
+  // Reihenfolge zählt: „Motorrad“ ist ein Moped, kein Fahrrad; „Stadtbahn“ keine Eisenbahn.
+  const PIKTO_WOERTER = [
+    ["tram", /stadtbahn|straßenbahn|strassenbahn|tram|u-bahn|ubahn/],
+    ["moped", /moped|roller|vespa|motorrad|mofa|scooter/],
+    ["rad", /rad|bike|velo/],
+    ["zug", /zug|bahn|ice\b|regio|\bre\b|\brb\b/],
+    ["bus", /bus/],
+    ["auto", /auto|pkw|car|taxi/],
+    ["fuss", /fu(ß|ss)|gehen|laufen|gelaufen/],
+  ];
+  function pikto(vm) {
+    const name = (vm || "").toLowerCase();
+    const treffer = PIKTO_WOERTER.find(([, re]) => re.test(name));
+    return PIKTO[treffer ? treffer[0] : "andere"];
+  }
+  function piktoSvg(p) {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p.svg}</svg>`;
   }
 
-  let toastTimer;
-  function toast(text) {
-    const t = $("toast");
-    t.textContent = text; t.hidden = false;
+  let toastTimer, toastFn = null;
+  function toast(text, aktion) {
+    $("toast-text").textContent = text;
+    $("toast-aktion").textContent = aktion ? aktion.text : "";
+    toastFn = aktion ? aktion.fn : null;
+    $("toast").hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+    toastTimer = setTimeout(() => { $("toast").hidden = true; toastFn = null; }, aktion ? 5000 : 2600);
   }
+  $("toast-aktion").addEventListener("click", () => {
+    const fn = toastFn;
+    $("toast").hidden = true; toastFn = null; clearTimeout(toastTimer);
+    if (fn) fn();
+  });
 
   // ---------- Speicher ----------
   function cacheLesen() {
@@ -545,32 +584,36 @@ legend { padding: 0; margin-bottom: 8px; }
     liste.forEach((w, i) => {
       const li = document.createElement("li");
       const offen = fehlt(w);
-      const b = document.createElement("button"); b.type = "button"; b.className = "trip" + (offen.length ? " offen" : "");
+      const etappen = w.etappen || [];
+      const b = document.createElement("button"); b.type = "button";
+      b.className = "trip" + (offen.length ? " offen" : "") + (etappen.length >= 4 ? " viele" : "");
       b.dataset.id = w.id;
       b.setAttribute("aria-label", `Weg ${i + 1} bearbeiten` + (offen.length ? ", unvollständig" : ""));
       const nr = document.createElement("div"); nr.className = "nr"; nr.textContent = i + 1;
-      const body = document.createElement("div"); body.className = "body";
-      const head = document.createElement("div"); head.className = "head";
-      const z = document.createElement("span"); z.className = "zweck" + (w.zweck ? "" : " leer"); z.textContent = w.zweck || "Zweck fehlt";
-      const t = document.createElement("span"); t.className = "zeit mono";
-      t.textContent = `${w.start || "?"} – ${w.ankunft || "?"}${ueberNacht(w) ? " (+1)" : ""}` + (dauerVon(w) != null ? ` · ${dauerText(dauerVon(w))}` : "");
-      head.append(z, t);
-      const route = document.createElement("div"); route.className = "route";
-      (w.etappen || []).forEach((e, k) => {
-        const leg = document.createElement("span"); leg.className = "leg";
-        const dot = document.createElement("i"); dot.style.background = farbe(e.vm);
-        leg.append(dot, e.vm);
-        if (e.m) { const len = document.createElement("span"); len.className = "len mono"; len.textContent = laenge(e.m); leg.append(len); }
-        route.append(leg);
+      const zeiten = document.createElement("div"); zeiten.className = "zeiten mono";
+      const z1 = document.createElement("span"); z1.textContent = w.start || "–:–";
+      const z2 = document.createElement("span"); z2.textContent = (w.ankunft || "–:–") + (ueberNacht(w) ? "⁺¹" : "");
+      zeiten.append(z1, z2);
+      const zweck = document.createElement("div"); zweck.className = "zweck" + (w.zweck ? "" : " leer");
+      zweck.textContent = w.zweck || "unvollständig";
+      if (offen.length && w.zweck) { const f = document.createElement("span"); f.className = "fehlt-text"; f.textContent = "unvollständig"; zweck.append(f); }
+      const route = document.createElement("div"); route.className = "legs";
+      etappen.forEach((e, k) => {
+        if (k) { const pf = document.createElement("span"); pf.className = "pf"; pf.textContent = "›"; route.append(pf); }
+        const p = pikto(e.vm);
+        const vm = document.createElement("span"); vm.className = "vm"; vm.title = e.vm; vm.style.setProperty("--c", p.farbe);
+        const ic = document.createElement("span"); ic.className = "ic"; ic.innerHTML = piktoSvg(p);
+        const len = document.createElement("small"); len.textContent = e.m ? laenge(e.m) : "?";
+        vm.append(ic, len);
+        route.append(vm);
       });
-      body.append(head, route);
-      if (offen.length) { const f = document.createElement("div"); f.className = "fehlt-text"; f.textContent = `Fehlt: ${offen.join(", ")}`; body.append(f); }
-      b.append(nr, body);
-      b.addEventListener("click", () => formOeffnen(w));
+      const dauer = document.createElement("span"); dauer.className = "dauer mono";
+      dauer.textContent = dauerVon(w) != null ? dauerText(dauerVon(w)) : "";
+      b.append(nr, zeiten, zweck, route, dauer);
+      gedruecktHalten(b, w, i + 1);
       li.append(b);
       ul.append(li);
     });
-
     return seite;
   }
 
@@ -581,6 +624,51 @@ legend { padding: 0; margin-bottom: 8px; }
     $("offen-text").textContent = `${offen} ${offen === 1 ? "Weg" : "Wege"} unvollständig`;
     laufendZeigen();
   }
+
+  // ---------- Gedrückt halten: Menü mit Bearbeiten, Kopieren, Löschen ----------
+  let menueWeg = null, klickNachMenue = 0;
+  function gedruecktHalten(b, w, nummer) {
+    let timer = null, start = null;
+    const abbrechen = () => { clearTimeout(timer); timer = null; };
+    b.addEventListener("touchstart", (e) => {
+      if (e.touches.length !== 1) return;
+      start = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      timer = setTimeout(() => { timer = null; menueOeffnen(w, nummer); }, 500);
+    }, { passive: true });
+    b.addEventListener("touchmove", (e) => {
+      if (timer && Math.hypot(e.touches[0].clientX - start.x, e.touches[0].clientY - start.y) > 10) abbrechen();
+    }, { passive: true });
+    b.addEventListener("touchend", abbrechen);
+    b.addEventListener("touchcancel", abbrechen);
+    b.addEventListener("contextmenu", (e) => { e.preventDefault(); abbrechen(); menueOeffnen(w, nummer); });   // Rechtsklick am Computer
+    b.addEventListener("click", () => { if (Date.now() > klickNachMenue) formOeffnen(w); });
+  }
+  function menueOeffnen(w, nummer) {
+    if ($("dlg-menue").open) return;
+    menueWeg = w;
+    klickNachMenue = Date.now() + 700;   // das Loslassen nach dem Halten öffnet nicht noch das Formular
+    if (navigator.vibrate) navigator.vibrate(10);
+    $("menue-titel").textContent = `Weg ${nummer}` + (w.zweck ? ` · ${w.zweck}` : "") + (w.start ? ` · ${w.start}` : "");
+    $("menue-duplizieren").hidden = false;
+    $("dlg-menue").showModal();
+  }
+  function menueSchliessen() { $("dlg-menue").close(); }
+  $("menue-abbrechen").addEventListener("click", menueSchliessen);
+  $("dlg-menue").addEventListener("click", (e) => { if (e.target === $("dlg-menue")) menueSchliessen(); });
+  $("menue-bearbeiten").addEventListener("click", () => { menueSchliessen(); formOeffnen(menueWeg); });
+  $("menue-duplizieren").addEventListener("click", () => {
+    menueSchliessen();
+    const kopie = { ...menueWeg, id: neueId(), datum: heute(), etappen: (menueWeg.etappen || []).map((e) => ({ ...e })), erstellt: Date.now() };
+    tag = heute();
+    wegSichern(kopie);
+    toast("Weg auf heute kopiert", { text: "Rückgängig", fn: () => wegLoeschen(kopie.id) });
+  });
+  $("menue-loeschen").addEventListener("click", () => {
+    menueSchliessen();
+    const weg = menueWeg;
+    wegLoeschen(weg.id);
+    toast("Weg gelöscht", { text: "Rückgängig", fn: () => { tag = weg.datum; wegSichern(weg); } });
+  });
 
   // ---------- Laufender Weg ----------
   function laufendZeigen() {
@@ -627,7 +715,7 @@ legend { padding: 0; margin-bottom: 8px; }
 
   // Zwecke und Verkehrsmittel: feste Vorauswahl, eigene Einträge und alles, was schon in Wegen vorkommt – alphabetisch.
   const ZWECKE = ["Uni", "nach Hause", "Einkaufen", "Essen"];
-  const VERKEHRSMITTEL = ["zu Fuß", "Stadtbahn", "Fahrrad", "Zug"];
+  const VERKEHRSMITTEL = ["zu Fuß", "Stadtbahn", "Fahrrad", "Zug", "Bus", "Auto", "Moped"];
   const alphabetisch = (liste) => [...new Set(liste.filter(Boolean))].sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
   function zweckListe() {
     return alphabetisch([...ZWECKE, ...(settings.zwecke || []), ...wege.map((w) => w.zweck)]);
