@@ -43,7 +43,7 @@ body {
   padding: 0 16px; -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;   /* kein Zoom durch Doppeltippen */
 }
-.app { max-width: 560px; margin: 0 auto; padding-block: calc(28px + env(safe-area-inset-top, 0px)) 120px; min-height: 100vh; display: flex; flex-direction: column; gap: 18px; }
+.app { max-width: 560px; margin: 0 auto; padding-block: calc(8px + env(safe-area-inset-top, 0px)) 120px; min-height: 100vh; display: flex; flex-direction: column; gap: 18px; }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -107,7 +107,7 @@ dialog.kal { height: fit-content; max-width: 360px; margin: auto; border-radius:
 .trip .zeiten { display: flex; flex-direction: column; font-size: 0.8rem; line-height: 1.25; }
 .trip .zeiten span + span { color: var(--muted); }
 .trip .zweck { font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
-.trip .dauer { font-size: 0.84rem; color: var(--muted); white-space: nowrap; }
+.trip .dauer { font-size: 0.84rem; color: var(--muted); white-space: nowrap; text-align: right; }
 .trip.offen { border-color: var(--danger); box-shadow: inset 3px 0 0 var(--danger); }
 .trip.offen .nr { background: var(--danger); color: var(--surface); }
 .trip .zweck.leer, .trip .fehlt-text { color: var(--danger); }
@@ -120,7 +120,7 @@ dialog.kal { height: fit-content; max-width: 360px; margin: auto; border-radius:
 .vm .ic svg { width: 17px; height: 17px; }
 .vm small { font-size: 0.68rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .trip.viele .nr, .trip.viele .zeiten { grid-row: span 2; }
-.trip.viele .legs { grid-column: 3 / -1; grid-row: 2; flex-wrap: wrap; }
+.trip.viele .legs { grid-column: 3 / -1; grid-row: 2; flex-wrap: wrap; justify-content: flex-end; }
 .empty { text-align: center; color: var(--muted); padding: 28px 12px; border: 1px dashed var(--line); border-radius: var(--radius); }
 .empty strong { display: block; color: var(--ink); font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 4px; }
 
@@ -154,8 +154,12 @@ dialog::backdrop { background: rgba(0,0,0,0.35); }
 .sheet { display: flex; flex-direction: column; height: 100%; }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; border-bottom: 1px solid var(--line); background: var(--surface); }
 .sheet-head .kopf-platz { width: 72px; }
-.sheet-fuss { display: flex; justify-content: flex-end; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--surface); }
-.sichern { height: 50px; padding: 0 30px; border-radius: 999px; font-size: 1rem; }
+.sheet-fuss { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--surface); }
+.sichern { height: 50px; padding: 0 30px; border-radius: 999px; font-size: 1rem; margin-left: auto; }
+.fuss-loeschen { height: 50px; padding: 0 22px; border-radius: 999px; }
+.fuss-frage { display: flex; align-items: center; gap: 8px; width: 100%; }
+.fuss-frage span { flex: 1; font-weight: 600; }
+.fuss-frage .btn { height: 44px; border-radius: 999px; }
 .sheet-head h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
 .sheet-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -186,6 +190,20 @@ legend { padding: 0; margin-bottom: 8px; }
 .berechnet input { color: var(--accent); }
 .add-leg { align-self: flex-start; }
 #legs { display: flex; flex-direction: column; gap: 18px; }
+/* Verkehrsmittel-Block: Kopfzeile mit Griff zum Verschieben, Piktogramm und Titel */
+.leg-block { display: flex; flex-direction: column; gap: 8px; position: relative; }
+.leg-block.zieht { z-index: 5; }
+.leg-block.zieht .group { box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-color: var(--accent); }
+.leg-kopf { display: flex; align-items: center; gap: 8px; min-height: 30px; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.griff { width: 30px; height: 30px; margin-left: -6px; border: 0; background: none; color: var(--muted); display: grid; place-items: center; touch-action: none; cursor: grab; }
+.griff svg { width: 18px; height: 18px; }
+.leg-kopf .ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
+.leg-kopf .ic svg { width: 17px; height: 17px; }
+/* Wegelänge: zwei Auswahlräder, km und m */
+.laenge-raeder { display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+.laenge-raeder select { flex: none; width: auto; min-width: 3.2em; text-align: right; text-align-last: right; font-variant-numeric: tabular-nums; }
+.laenge-raeder .unit { color: var(--muted); margin-right: 6px; }
+.laenge-raeder .unit:last-child { margin-right: 0; }
 .confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--danger); }
 
 /* Export */
@@ -243,6 +261,12 @@ legend { padding: 0; margin-bottom: 8px; }
   <div class="kal-grid" id="kal-grid"></div>
 </dialog>
 
+<dialog class="menue" id="dlg-legmenue" aria-labelledby="legmenue-titel">
+  <div class="menue-titel" id="legmenue-titel"></div>
+  <button type="button" id="legmenue-loeschen" class="rot">Verkehrsmittel löschen</button>
+  <button type="button" id="legmenue-abbrechen" class="abbrechen">Abbrechen</button>
+</dialog>
+
 <dialog id="dlg-weg" aria-labelledby="weg-title">
   <form class="sheet" id="form-weg" novalidate>
     <div class="sheet-head">
@@ -274,17 +298,15 @@ legend { padding: 0; margin-bottom: 8px; }
       <div id="legs"></div>
       <button type="button" class="btn add-leg" id="add-leg">＋ Weiteres Verkehrsmittel</button>
 
-      <div id="weg-delete-area" hidden>
-        <button type="button" class="btn danger" id="weg-delete">Weg löschen</button>
-        <div class="confirm" id="weg-confirm" hidden>
-          <span>Diesen Weg wirklich löschen?</span>
-          <button type="button" class="btn danger solid" id="weg-delete-yes">Löschen</button>
-          <button type="button" class="btn" id="weg-delete-no">Behalten</button>
-        </div>
-      </div>
     </div>
     <div class="sheet-fuss">
+      <button type="button" class="btn danger fuss-loeschen" id="weg-delete" hidden>Löschen</button>
       <button type="submit" class="btn primary sichern" id="weg-save">Sichern</button>
+      <div class="fuss-frage" id="weg-confirm" hidden>
+        <span>Weg wirklich löschen?</span>
+        <button type="button" class="btn" id="weg-delete-no">Behalten</button>
+        <button type="button" class="btn danger solid" id="weg-delete-yes">Löschen</button>
+      </div>
     </div>
   </form>
 </dialog>
@@ -469,6 +491,29 @@ legend { padding: 0; margin-bottom: 8px; }
   });
 
   // ---------- Speicher ----------
+  // „Stadtbahn“ heißt jetzt „Tram“: gespeicherte Wege und eigene Listen einmalig umbenennen.
+  const tramName = (vm) => (vm === "Stadtbahn" ? "Tram" : vm);
+  function stadtbahnZuTram() {
+    const geaendert = [];
+    wege = wege.map((w) => {
+      if (!(w.etappen || []).some((e) => e.vm === "Stadtbahn")) return w;
+      const neu = { ...w, etappen: w.etappen.map((e) => ({ ...e, vm: tramName(e.vm) })) };
+      geaendert.push(neu);
+      return neu;
+    });
+    const listeAlt = settings.verkehrsmittel || [];
+    if (listeAlt.includes("Stadtbahn")) settings = { ...settings, verkehrsmittel: [...new Set(listeAlt.map(tramName))] };
+    return { geaendert, einstellungen: listeAlt.includes("Stadtbahn") };
+  }
+  function umbenennenSichern() {
+    const { geaendert, einstellungen } = stadtbahnZuTram();
+    if (!geaendert.length && !einstellungen) return;
+    cacheSchreiben();
+    if (store.mode === "db") {
+      geaendert.forEach((w) => wegeSammlung().doc(w.id).set(w).catch(() => {}));
+      if (einstellungen) einstellungenSichern();
+    }
+  }
   function cacheLesen() {
     try {
       const raw = localStorage.getItem(CACHE_KEY);
@@ -506,6 +551,7 @@ legend { padding: 0; margin-bottom: 8px; }
         const d = profil.data() || {};
         settings = { ...settings, laufend: null, ...(d.settings || {}) };
         cacheSchreiben();
+        umbenennenSichern();
         render();
       }, () => {});
 
@@ -522,6 +568,7 @@ legend { padding: 0; margin-bottom: 8px; }
         if (!snap.metadata.fromCache) ersterStand = false;
         wege = neu;
         cacheSchreiben();
+        umbenennenSichern();
         render();
       }, () => {
         store = { mode: "local", db: null, uid: null };
@@ -715,12 +762,12 @@ legend { padding: 0; margin-bottom: 8px; }
   });
 
   // ---------- Formular ----------
-  let legs = []; // [{vm, m, neuModus, neu}]  m = Länge in Metern, neu = eigene Länge in km als Text
-  const neueEtappe = () => ({ vm: "", m: null, neuModus: false, neu: "" });
+  let legs = []; // [{vm, m}]  m = Länge in Metern
+  const neueEtappe = () => ({ vm: "", m: null });
 
   // Zwecke und Verkehrsmittel: feste Vorauswahl, eigene Einträge und alles, was schon in Wegen vorkommt – alphabetisch.
   const ZWECKE = ["Uni", "nach Hause", "Einkaufen", "Essen"];
-  const VERKEHRSMITTEL = ["zu Fuß", "Stadtbahn", "Fahrrad", "Zug", "Bus", "Auto", "Moped"];
+  const VERKEHRSMITTEL = ["zu Fuß", "Tram", "Fahrrad", "Zug", "Bus", "Auto", "Moped"];
   const alphabetisch = (liste) => [...new Set(liste.filter(Boolean))].sort((a, b) => a.localeCompare(b, "de", { sensitivity: "base" }));
   function zweckListe() {
     return alphabetisch([...ZWECKE, ...(settings.zwecke || []), ...wege.map((w) => w.zweck)]);
@@ -729,13 +776,9 @@ legend { padding: 0; margin-bottom: 8px; }
     return alphabetisch([...VERKEHRSMITTEL, ...(settings.verkehrsmittel || []), ...wege.flatMap((w) => (w.etappen || []).map((e) => e.vm))]);
   }
 
-  // Wegelängen in Metern: sinnvolle Vorauswahl plus eigene und schon verwendete Werte
-  const LAENGEN = [100, 250, 500, 1000, 2000, 3000, 4000, 5000, 7500, 10000, 15000];
-  function laengeListe() {
-    const set = new Set([...LAENGEN, ...(settings.laengen || [])]);
-    wege.forEach((w) => (w.etappen || []).forEach((e) => { if (e.m) set.add(e.m); }));
-    return [...set].sort((a, b) => a - b);
-  }
+  // Wegelänge über zwei Räder: km 0–99 in Einerschritten, dann 100–1000 in Hunderterschritten; m in 100er-Schritten.
+  const KM_WERTE = [...Array(100).keys(), ...Array.from({ length: 10 }, (_, i) => (i + 1) * 100)];
+  const M_WERTE = Array.from({ length: 10 }, (_, i) => i * 100);
   const MAX_ETAPPEN = 8;
 
   // Auswahlliste: leerer Eintrag, bekannte Werte, "+ Neu" zum Eintippen
@@ -744,14 +787,30 @@ legend { padding: 0; margin-bottom: 8px; }
     select.value = liste.includes(wert) ? wert : (wert ? ANDERE : "");
   }
 
+  const GRIFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
+
   function legsZeichnen() {
     const box = $("legs");
     box.replaceChildren();
     legs.forEach((leg, i) => {
-      const fs = document.createElement("fieldset");
-      const lg = document.createElement("legend"); lg.className = "label"; lg.textContent = `Verkehrsmittel ${i + 1}`;
-      const grp = document.createElement("div"); grp.className = "group";
+      const block = document.createElement("div"); block.className = "leg-block"; block.setAttribute("role", "group");
+      block.setAttribute("aria-label", `Verkehrsmittel ${i + 1}`);
 
+      // Kopfzeile: Griff, Piktogramm, Titel. Gedrückt halten öffnet „Verkehrsmittel löschen“.
+      const kopf = document.createElement("div"); kopf.className = "leg-kopf";
+      const griff = document.createElement("button"); griff.type = "button"; griff.className = "griff";
+      griff.setAttribute("aria-label", `Verkehrsmittel ${i + 1} verschieben`); griff.innerHTML = GRIFF_SVG;
+      griff.hidden = legs.length < 2;
+      const ic = document.createElement("span"); ic.className = "ic";
+      const titel = document.createElement("span"); titel.className = "label"; titel.textContent = `Verkehrsmittel ${i + 1}`;
+      const piktoZeigen = () => {
+        ic.hidden = !leg.vm;
+        if (leg.vm) { const p = pikto(leg.vm); ic.style.setProperty("--c", p.farbe); ic.innerHTML = piktoSvg(p); }
+      };
+      piktoZeigen();
+      kopf.append(griff, ic, titel);
+
+      const grp = document.createElement("div"); grp.className = "group";
       const f1 = document.createElement("label"); f1.className = "field";
       const s1 = document.createElement("span"); s1.textContent = "Verkehrsmittel";
       const sel = document.createElement("select"); sel.id = `f-vm-${i}`;
@@ -766,43 +825,122 @@ legend { padding: 0; margin-bottom: 8px; }
       f2.append(s2, frei);
       f2.hidden = sel.value !== ANDERE;
 
-      // Wegelänge im selben Block: Auswahlliste, eigene Werte über "+ Neu" (in km)
-      const f3 = document.createElement("label"); f3.className = "field";
-      const s3 = document.createElement("span"); s3.textContent = "Wegelänge";
-      const lsel = document.createElement("select"); lsel.id = `f-len-${i}`;
-      lsel.add(new Option("–", ""));
-      laengeListe().forEach((m) => lsel.add(new Option(laenge(m), String(m))));
-      lsel.add(new Option("+ Neu", ANDERE));
-      lsel.value = leg.neuModus ? ANDERE : (leg.m ? String(leg.m) : "");
-      f3.append(s3, lsel);
-      const f4 = document.createElement("label"); f4.className = "field";
-      const s4 = document.createElement("span"); s4.textContent = "Neue Länge";
-      const lenBox = document.createElement("div"); lenBox.className = "len-in";
-      const inp = document.createElement("input"); inp.id = `f-lenneu-${i}`; inp.inputMode = "decimal"; inp.placeholder = "z. B. 12,5"; inp.autocomplete = "off";
-      inp.value = leg.neu || "";
-      const unit = document.createElement("span"); unit.className = "unit"; unit.textContent = "km";
-      lenBox.append(inp, unit);
-      f4.append(s4, lenBox);
-      f4.hidden = lsel.value !== ANDERE;
-      lsel.addEventListener("change", () => {
-        leg.neuModus = lsel.value === ANDERE;
-        f4.hidden = !leg.neuModus;
-        if (leg.neuModus) inp.focus(); else leg.m = lsel.value ? Number(lsel.value) : null;
+      // Wegelänge: Rad für km, Rad für m. Alte Werte außerhalb der Schritte (z. B. 250 m) bleiben als eigener Eintrag wählbar.
+      const f3 = document.createElement("div"); f3.className = "field";
+      const s3 = document.createElement("label"); s3.textContent = "Wegelänge"; s3.htmlFor = `f-km-${i}`;
+      const raeder = document.createElement("span"); raeder.className = "laenge-raeder";
+      const kmSel = document.createElement("select"); kmSel.id = `f-km-${i}`; kmSel.setAttribute("aria-label", "Kilometer");
+      const mSel = document.createElement("select"); mSel.id = `f-m-${i}`; mSel.setAttribute("aria-label", "Meter");
+      const km = leg.m ? Math.floor(leg.m / 1000) : 0, rest = leg.m ? leg.m % 1000 : 0;
+      const kmListe = KM_WERTE.includes(km) ? KM_WERTE : [...KM_WERTE, km].sort((x, y) => x - y);
+      const mListe = M_WERTE.includes(rest) ? M_WERTE : [...M_WERTE, rest].sort((x, y) => x - y);
+      kmListe.forEach((v) => kmSel.add(new Option(String(v), String(v))));
+      mListe.forEach((v) => mSel.add(new Option(String(v), String(v))));
+      kmSel.value = String(km); mSel.value = String(rest);
+      const mSperren = () => { mSel.disabled = Number(kmSel.value) >= 100 && mSel.value === "0"; };
+      mSperren();
+      const kmEinheit = document.createElement("span"); kmEinheit.className = "unit"; kmEinheit.textContent = "km";
+      const mEinheit = document.createElement("span"); mEinheit.className = "unit"; mEinheit.textContent = "m";
+      raeder.append(kmSel, kmEinheit, mSel, mEinheit);
+      f3.append(s3, raeder);
+      const laengeLesen = () => {
+        if (Number(kmSel.value) >= 100) mSel.value = "0";
+        mSperren();
+        const m = Number(kmSel.value) * 1000 + Number(mSel.value);
+        leg.m = m > 0 ? m : null;
         pruefen();
-      });
+      };
+      kmSel.addEventListener("change", laengeLesen);
+      mSel.addEventListener("change", laengeLesen);
 
       sel.addEventListener("change", () => {
         if (sel.value === ANDERE) { f2.hidden = false; leg.vm = frei.value.trim(); frei.focus(); }
         else { f2.hidden = true; leg.vm = sel.value; }
-        if (sel.value === "" && i > 0) { legs.splice(i); legsZeichnen(); }
+        if (sel.value === "" && i > 0) { legs.splice(i, 1); legsZeichnen(); }
+        else piktoZeigen();
         pruefen();
       });
-      frei.addEventListener("input", () => { leg.vm = frei.value.trim(); pruefen(); });
-      inp.addEventListener("input", () => { leg.neu = inp.value; pruefen(); });
+      frei.addEventListener("input", () => { leg.vm = frei.value.trim(); piktoZeigen(); pruefen(); });
 
-      grp.append(f1, f2, f3, f4);
-      fs.append(lg, grp);
-      box.append(fs);
+      grp.append(f1, f2, f3);
+      block.append(kopf, grp);
+      box.append(block);
+
+      etappeHalten(kopf, i);
+      etappeZiehen(griff, block, i);
+    });
+  }
+
+  // Kopfzeile gedrückt halten: kleines Menü „Verkehrsmittel löschen“ (ohne Nachfrage)
+  let legMenueIndex = -1;
+  function etappeHalten(kopf, i) {
+    let timer = null, start = null;
+    const abbrechen = () => { clearTimeout(timer); timer = null; };
+    kopf.addEventListener("touchstart", (e) => {
+      if (e.target.closest(".griff")) return;
+      start = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      timer = setTimeout(() => { timer = null; legMenueOeffnen(i); }, 500);
+    }, { passive: true });
+    kopf.addEventListener("touchmove", (e) => {
+      if (timer && Math.hypot(e.touches[0].clientX - start.x, e.touches[0].clientY - start.y) > 10) abbrechen();
+    }, { passive: true });
+    kopf.addEventListener("touchend", abbrechen);
+    kopf.addEventListener("touchcancel", abbrechen);
+    kopf.addEventListener("contextmenu", (e) => { e.preventDefault(); abbrechen(); legMenueOeffnen(i); });
+  }
+  function legMenueOeffnen(i) {
+    if ($("dlg-legmenue").open) return;
+    legMenueIndex = i;
+    if (navigator.vibrate) navigator.vibrate(10);
+    const leg = legs[i];
+    $("legmenue-titel").textContent = `Verkehrsmittel ${i + 1}` + (leg.vm ? ` · ${leg.vm}` : "") + (leg.m ? ` · ${laenge(leg.m)}` : "");
+    $("dlg-legmenue").showModal();
+  }
+  $("legmenue-abbrechen").addEventListener("click", () => $("dlg-legmenue").close());
+  $("dlg-legmenue").addEventListener("click", (e) => { if (e.target === $("dlg-legmenue")) $("dlg-legmenue").close(); });
+  $("legmenue-loeschen").addEventListener("click", () => {
+    $("dlg-legmenue").close();
+    if (legs.length > 1) legs.splice(legMenueIndex, 1); else legs = [neueEtappe()];
+    legsZeichnen();
+    pruefen();
+  });
+
+  // Griff ziehen: der Block folgt dem Finger und tauscht mit dem Nachbarn, sobald er über dessen Mitte ist.
+  function etappeZiehen(griff, block, i) {
+    griff.addEventListener("pointerdown", (e) => {
+      if (legs.length < 2) return;
+      e.preventDefault();
+      try { griff.setPointerCapture(e.pointerId); } catch (_) {}
+      const box = $("legs");
+      const abstand = parseFloat(getComputedStyle(box).rowGap) || 0;
+      let index = i, startY = e.clientY;
+      block.classList.add("zieht");
+      const bewegen = (ev) => {
+        let dy = ev.clientY - startY;
+        const vor = block.previousElementSibling, nach = block.nextElementSibling;
+        if (nach && dy > nach.offsetHeight / 2 + abstand / 2) {
+          box.insertBefore(nach, block);
+          [legs[index], legs[index + 1]] = [legs[index + 1], legs[index]];
+          index++; startY += nach.offsetHeight + abstand; dy = ev.clientY - startY;
+        } else if (vor && dy < -(vor.offsetHeight / 2 + abstand / 2)) {
+          box.insertBefore(block, vor);
+          [legs[index], legs[index - 1]] = [legs[index - 1], legs[index]];
+          index--; startY -= vor.offsetHeight + abstand; dy = ev.clientY - startY;
+        }
+        block.style.transform = `translateY(${dy}px)`;
+      };
+      const ende = () => {
+        griff.removeEventListener("pointermove", bewegen);
+        griff.removeEventListener("pointerup", ende);
+        griff.removeEventListener("pointercancel", ende);
+        block.classList.remove("zieht");
+        block.style.transform = "";
+        legsZeichnen();   // Nummern und Felder neu ordnen
+        pruefen();
+      };
+      griff.addEventListener("pointermove", bewegen);
+      griff.addEventListener("pointerup", ende);
+      griff.addEventListener("pointercancel", ende);
     });
   }
 
@@ -843,17 +981,17 @@ legend { padding: 0; margin-bottom: 8px; }
 
   // Sichern geht immer; fehlende Angaben machen den Weg nur "unvollständig".
   function pruefen() {
-    const ok = !!$("f-datum").value && legs.every((l) => !l.neuModus || !Number.isNaN(zahl(l.neu)));
+    const ok = !!$("f-datum").value;
     $("weg-save").disabled = !ok;
     const l0 = legs[0] || {};
-    const lenOk = l0.neuModus ? zahl(l0.neu) > 0 : !!l0.m;
+    const lenOk = !!l0.m;
     const markiere = (el, an) => { if (el) el.classList.toggle("fehlt", rotMarkieren && an); };
     markiere($("z-start"), !$("f-start").value);
     markiere($("z-dauer"), !$("f-dauer").value);
     markiere($("z-ankunft"), !$("f-ankunft").value);
     markiere($("f-zweck").closest(".field"), !zweckWert());
     markiere($("f-vm-0") && $("f-vm-0").closest(".field"), !l0.vm);
-    markiere($("f-len-0") && $("f-len-0").closest(".field"), !lenOk);
+    markiere($("f-km-0") && $("f-km-0").closest(".field"), !lenOk);
     $("f-plus1").hidden = !($("f-start").value && $("f-ankunft").value && $("f-ankunft").value.slice(0, 5) < $("f-start").value.slice(0, 5));
     $("add-leg").hidden = legs.length >= MAX_ETAPPEN || !legs[legs.length - 1].vm;
     return ok;
@@ -876,12 +1014,12 @@ legend { padding: 0; margin-bottom: 8px; }
     $("f-zweck-frei").value = "";
     $("f-zweck-frei-row").hidden = $("f-zweck").value !== ANDERE;
     legs = w && w.etappen && w.etappen.length
-      ? w.etappen.map((e) => ({ vm: e.vm, m: e.m || null, neuModus: false, neu: "" }))
+      ? w.etappen.map((e) => ({ vm: e.vm, m: e.m || null }))
       : [neueEtappe()];
     legsZeichnen();
-    $("weg-delete-area").hidden = !w;
     $("weg-confirm").hidden = true;
-    $("weg-delete").hidden = false;
+    $("weg-delete").hidden = !w;
+    $("weg-save").hidden = false;
     pruefen();
     $("dlg-weg").showModal();
   }
@@ -898,8 +1036,10 @@ legend { padding: 0; margin-bottom: 8px; }
   $("f-ankunft-jetzt").addEventListener("click", () => { $("f-ankunft").value = uhrzeit(new Date()); zeitGeaendert("ankunft"); });
   $("add-leg").addEventListener("click", () => { if (legs.length < MAX_ETAPPEN) { legs.push(neueEtappe()); legsZeichnen(); pruefen(); } });
   $("weg-cancel").addEventListener("click", () => $("dlg-weg").close());
-  $("weg-delete").addEventListener("click", () => { $("weg-confirm").hidden = false; $("weg-delete").hidden = true; });
-  $("weg-delete-no").addEventListener("click", () => { $("weg-confirm").hidden = true; $("weg-delete").hidden = false; });
+  // Löschen im Formular: mit Nachfrage in der unteren Leiste
+  const loeschFrage = (an) => { $("weg-confirm").hidden = !an; $("weg-delete").hidden = an; $("weg-save").hidden = an; };
+  $("weg-delete").addEventListener("click", () => loeschFrage(true));
+  $("weg-delete-no").addEventListener("click", () => loeschFrage(false));
   $("weg-delete-yes").addEventListener("click", () => {
     if (editId) wegLoeschen(editId);
     $("dlg-weg").close();
@@ -916,25 +1056,20 @@ legend { padding: 0; margin-bottom: 8px; }
       start: $("f-start").value.slice(0, 5),
       ankunft: $("f-ankunft").value.slice(0, 5),
       zweck: zweckWert(),
-      etappen: legs.filter((l) => l.vm).map((l) => {
-        if (!l.neuModus) return { vm: l.vm, m: l.m || null };
-        const v = zahl(l.neu);
-        return { vm: l.vm, m: v && v > 0 ? Math.round(v * 1000) : null };
-      }),
+      etappen: legs.filter((l) => l.vm).map((l) => ({ vm: l.vm, m: l.m || null })),
       erstellt: alt ? alt.erstellt : Date.now(),
     };
     w.dauer = dauerVon(w);
     tag = w.datum;
     // Neue Zwecke, Verkehrsmittel und Längen bleiben dauerhaft im Menü, auch wenn der Weg gelöscht wird.
     const ergaenzt = (liste, neu) => [...new Set([...(liste || []), ...neu.filter(Boolean)])];
-    const vorher = JSON.stringify([settings.zwecke, settings.verkehrsmittel, settings.laengen]);
+    const vorher = JSON.stringify([settings.zwecke, settings.verkehrsmittel]);
     settings = {
       ...settings,
       zwecke: ergaenzt(settings.zwecke, [w.zweck]),
       verkehrsmittel: ergaenzt(settings.verkehrsmittel, w.etappen.map((e) => e.vm)),
-      laengen: ergaenzt(settings.laengen, w.etappen.map((e) => e.m).filter((m) => !LAENGEN.includes(m))),
     };
-    if (JSON.stringify([settings.zwecke, settings.verkehrsmittel, settings.laengen]) !== vorher) einstellungenSichern();
+    if (JSON.stringify([settings.zwecke, settings.verkehrsmittel]) !== vorher) einstellungenSichern();
     wegSichern(w);
     $("dlg-weg").close();
   });
@@ -1477,12 +1612,14 @@ legend { padding: 0; margin-bottom: 8px; }
     einstellungenSichern();
     const neu = daten.wege.filter((w) => w && w.id && w.datum);
     for (const w of neu) await wegSichern(w);
+    umbenennenSichern();
     expTageZeichnen(); expZeigen();
     toast(`${neu.length} ${neu.length === 1 ? "Weg" : "Wege"} aus der Sicherung geladen`);
   });
 
   // ---------- Start ----------
   cacheLesen();
+  umbenennenSichern();
   speicherHinweis();
   render();
   speicherVerbinden();
