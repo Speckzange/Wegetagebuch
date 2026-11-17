@@ -37,13 +37,15 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+/* Wie eine App: die Seite selbst scrollt nie, nur die Wegeliste. Kopf und Knöpfe bleiben fest. */
+html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
 body {
   background: var(--bg); color: var(--ink);
   font-family: var(--font-body); font-size: 16px; line-height: 1.45;
   padding: 0 16px; -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;   /* kein Zoom durch Doppeltippen */
 }
-.app { max-width: 560px; margin: 0 auto; padding-block: calc(28px + env(safe-area-inset-top, 0px)) 120px; min-height: 100vh; display: flex; flex-direction: column; gap: 18px; }
+.app { max-width: 560px; margin: 0 auto; padding-top: calc(6px + env(safe-area-inset-top, 0px)); height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -69,7 +71,7 @@ button { cursor: pointer; }
 .mini.platz { visibility: hidden; }
 
 /* Tagesnavigation: Wischen schiebt die Seiten mit dem Finger, Tippen wechselt den Tag, Tippen aufs Datum öffnet den Kalender, Doppeltippen springt zu heute */
-.tagkopf { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0 10px; margin: -8px 0 -10px; position: sticky; top: 0; z-index: 5; background: var(--bg); }
+.tagkopf { flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 2px; }
 .tagkopf .wd { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 /* Datum als deutlicher Knopf: Kalender-Symbol, Datum, Pfeil nach unten */
 .daypick { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 8px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); user-select: none; -webkit-user-select: none; }
@@ -78,10 +80,10 @@ button { cursor: pointer; }
 .daypick .pfeil { width: 7px; height: 7px; margin: -4px 2px 0 2px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); }
 @media (prefers-reduced-motion: no-preference) { .daypick { transition: transform 0.12s ease; } .daypick:active { transform: scale(0.97); } }
 
-.pager { flex: 1; display: flex; margin: 0 -16px; overflow: hidden; overflow: clip; touch-action: pan-y; }   /* clip statt hidden, sonst bleibt der Tageskopf nicht oben stehen */
-.track { flex: none; display: flex; align-items: flex-start; width: 300%; transform: translateX(-33.3333%); }
-.seite { width: 33.3333%; padding: 0 16px; display: flex; flex-direction: column; gap: 18px; }
-.seite.neben { max-height: 100vh; overflow: hidden; }
+.pager { flex: 1; min-height: 0; display: flex; margin: 0 -16px; overflow: hidden; touch-action: pan-y; }
+.track { flex: none; display: flex; width: 300%; height: 100%; transform: translateX(-33.3333%); }
+.seite { width: 33.3333%; height: 100%; min-height: 0; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; }
+.seite > .offen-hinweis { flex: none; }
 
 /* Kalender */
 dialog.kal { height: fit-content; max-width: 360px; margin: auto; border-radius: 18px; background: var(--surface); padding: 14px 14px 16px; }
@@ -104,10 +106,20 @@ dialog.menue { height: fit-content; max-width: 340px; margin: auto auto calc(16p
 .kal-tag i.rot { background: var(--danger); }
 .kal-tag[aria-current="true"] i { background: var(--accent-ink); }
 .kal-tag[aria-current="true"] i.rot { background: var(--danger); box-shadow: 0 0 0 1.5px var(--accent-ink); }
+/* Gedrückt halten markiert Tage zum Löschen */
+.kal-tag { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.kal-grid.markieren .kal-tag[aria-current="true"] { background: none; color: var(--ink); font-weight: 400; }
+.kal-grid.markieren .kal-tag[aria-current="true"] i { background: var(--accent); }
+.kal-grid.markieren .kal-tag[aria-current="true"] i.rot { background: var(--danger); box-shadow: none; }
+.kal-tag.markiert, .kal-grid.markieren .kal-tag.markiert[aria-current="true"] { background: var(--danger); color: #fff; font-weight: 600; }
+.kal-tag.markiert i, .kal-grid.markieren .kal-tag.markiert i { background: #fff; box-shadow: none; }
+.kal-fuss { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.kal-fuss span { color: var(--muted); font-size: 0.9rem; }
+.kal-fuss div { display: flex; gap: 6px; }
 
 /* Wegeliste */
 .offen-hinweis { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--danger); color: var(--danger); background: var(--surface); border-radius: var(--radius); padding: 10px 14px; font-weight: 600; }
-.trips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.trips { list-style: none; margin: 0 -16px; padding: 2px 16px calc(110px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 /* Wegkarte: Nummer | Start/Ankunft | Zweck | Verkehrsmittel-Symbole | Dauer */
 .trip { width: 100%; text-align: left; display: grid; grid-template-columns: 30px 36px 44px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 7px 12px 7px 10px; min-height: 56px; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 .trip .nr { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; }
@@ -142,17 +154,83 @@ body.auswahl .trip.markiert .nr::after { content: ""; width: 6px; height: 11px; 
 .empty strong { display: block; color: var(--ink); font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 4px; }
 
 /* Untere Leiste: Export | Weg starten/beenden | + Weg */
-.dock { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: 84px 1fr 84px; gap: 10px; width: calc(100% - 32px); max-width: 480px; }
+.dock { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: 56px 1fr 56px; gap: 10px; width: calc(100% - 32px); max-width: 480px; }
 .fab { border: 0; border-radius: 999px; height: 56px; padding: 0 12px; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 1rem; box-shadow: 0 6px 20px rgba(0,0,0,0.18); display: flex; gap: 8px; align-items: center; justify-content: center; white-space: nowrap; }
 .fab svg { width: 22px; height: 22px; }
 .fab:disabled { opacity: 0.5; }
 .fab.second { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
-.fab.laeuft { background: var(--danger); color: #fff; flex-direction: column; gap: 0; line-height: 1.2; }
-.fab.laeuft .zeile1 { display: flex; align-items: center; gap: 7px; }
-.fab.laeuft .zeile2 { font-size: 0.78rem; font-weight: 500; opacity: 0.92; }
-.fab.laeuft .pulse { width: 8px; height: 8px; border-radius: 50%; background: #fff; }
-@media (prefers-reduced-motion: no-preference) { .fab.laeuft .pulse { animation: puls 1.6s ease-in-out infinite; } }
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 14px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(0,0,0,0.4); padding: 8px 8px 8px 14px; border-radius: 12px; font-size: 0.9rem; max-width: calc(100% - 32px); white-space: nowrap; }
+.fab.rund { padding: 0; font-size: 1.6rem; font-weight: 400; }
+.fab.rund svg { width: 24px; height: 24px; }
+/* Unterwegs-Karte: alles in Rot */
+.unterwegs { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: calc(100% - 24px); max-width: 500px; box-sizing: border-box; background: color-mix(in srgb, var(--danger) 12%, var(--bg)); border: 1px solid var(--danger); border-radius: 22px; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+.uw-kopf { display: flex; align-items: center; gap: 8px; color: var(--danger); }
+.uw-kopf .pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); flex: none; }
+@media (prefers-reduced-motion: no-preference) { .uw-kopf .pulse { animation: puls 1.6s ease-in-out infinite; } }
+.uw-seit { font-weight: 600; }
+.uw-seit small { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 500; opacity: 0.85; margin-left: 4px; }
+.uw-verwerfen { margin-left: auto; border: 0; background: none; color: var(--danger); text-decoration: underline; font-size: 0.88rem; padding: 4px 2px; }
+.uw-kette { display: flex; align-items: flex-start; justify-content: center; gap: 8px; overflow-x: auto; padding: 2px 0; }
+.uw-etappe { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 52px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.uw-etappe .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
+.uw-etappe .ic svg { width: 25px; height: 25px; }
+.uw-etappe.jetzt { color: var(--ink); }
+.uw-etappe.jetzt .ic { background: color-mix(in srgb, var(--c) 30%, transparent); outline: 1.5px solid var(--c); }
+.uw-pfeil { color: var(--danger); font-size: 1.3rem; line-height: 40px; }
+.uw-knoepfe { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.uw-knoepfe button { height: 52px; border-radius: 999px; font-weight: 600; font-size: 1rem; }
+.uw-um { border: 1.5px solid var(--danger); background: transparent; color: var(--danger); }
+.uw-an { border: 0; background: var(--danger); color: #2a0d0a; }
+body.laeuft .trips { padding-bottom: calc(230px + env(safe-area-inset-bottom, 0px)); }
+body.laeuft .toast { bottom: calc(205px + env(safe-area-inset-bottom, 0px)); }
+/* Blätter von unten */
+dialog.blatt { height: fit-content; max-height: 92%; margin: auto auto 0; background: var(--surface); border-top: 1px solid var(--line); border-radius: 22px 22px 0 0; padding: 8px 16px calc(20px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; overflow-y: auto; }
+@media (min-width: 600px) { dialog.blatt { margin: auto auto 0; border-radius: 22px 22px 0 0; } }
+.blatt-griff { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 12px; }
+.blatt-kopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.blatt-kopf h2 { margin: 0; font-family: var(--font-display); font-size: 1.35rem; }
+.blatt-unter { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+.blatt-unter:empty { display: none; }
+.zeitwahl { background: var(--bg); margin-bottom: 12px; }
+.zeitwahl button, .zeitwahl .um-knopf { padding: 9px 2px; font-size: 0.88rem; }
+.um-knopf { flex: 1; position: relative; display: grid; place-items: center; border-radius: 9px; font-weight: 500; white-space: nowrap; }
+.um-knopf input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; }
+.um-knopf[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.vm-wahl.gross { gap: 6px; padding: 0; }
+.vm-wahl.gross .vm-knopf { font-size: 0.8rem; padding: 8px 2px 6px; gap: 5px; }
+.vm-wahl.gross .vm-knopf .ic { width: 46px; height: 46px; border-radius: 13px; }
+.vm-wahl.gross .vm-knopf .ic svg { width: 27px; height: 27px; }
+.vm-knopf.aus { opacity: 0.3; pointer-events: none; }
+.ziel-wahl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ziel-wahl button { min-height: 54px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); color: var(--ink); font-weight: 600; font-size: 1.02rem; overflow-wrap: anywhere; }
+.ziel-wahl button.neben { color: var(--muted); font-weight: 500; }
+.ziel-wahl button.spaeter { border-style: dashed; }
+.ziel-frei { display: flex; gap: 8px; margin-top: 10px; }
+.ziel-frei input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 10px 12px; font-size: 1rem; }
+.menue-kacheln { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-bottom: 8px; }
+.menue-kacheln button { display: flex; align-items: center; gap: 12px; height: 68px; padding: 0 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg); color: var(--ink); font-weight: 600; font-size: 1rem; text-align: left; }
+.menue-kacheln i { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex: none; }
+.menue-kacheln svg { width: 22px; height: 22px; }
+.bald { flex: 1; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; border: 1px dashed var(--line); border-radius: var(--radius); padding: 24px; color: var(--muted); }
+.bald svg { width: 44px; height: 44px; }
+.bald strong { font-family: var(--font-display); font-size: 1.25rem; color: var(--ink); }
+.hilfe { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 12px; line-height: 1.45; }
+/* GPS */
+.gps-hinweis { margin: -4px 2px 12px; font-size: 0.82rem; color: var(--muted); }
+#dlg-einst .label { margin: 0; }
+#dlg-einst .block { gap: 8px; }
+.field .wert { color: var(--muted); text-align: right; font-size: 0.92rem; }
+.field input.schalter { flex: none; -webkit-appearance: none; appearance: none; width: 51px; height: 31px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; transition: background 0.15s; margin: 0; }
+.field input.schalter::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; transition: transform 0.15s; }
+.field input.schalter:checked { background: var(--accent); }
+.field input.schalter:checked::after { transform: translateX(20px); }
+.faktor-name { display: flex; align-items: center; gap: 10px; }
+.faktor-name .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
+.faktor-name .ic svg { width: 18px; height: 18px; }
+#dlg-einst .btn.frage, #dlg-kal .btn.frage { background: var(--danger); color: #fff; border-color: var(--danger); }
+#dlg-einst .btn:disabled, #dlg-kal .btn:disabled { opacity: 0.4; }
+/* Tageskopf: Wochentag und Datum im Knopf, am aktuellen Tag mit „heute“ */
+.daypick .heute { font-size: 0.75rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 8px; }
+.toast { position: fixed; inset: auto; top: auto; right: auto; margin: 0; overflow: visible; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 14px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(0,0,0,0.4); padding: 8px 8px 8px 14px; border-radius: 12px; font-size: 0.9rem; max-width: calc(100% - 32px); white-space: nowrap; }
 .toast button { border: 0; background: none; color: var(--accent); font-weight: 700; padding: 6px 8px; }
 .toast button:empty { display: none; }
 
@@ -203,7 +281,11 @@ legend { padding: 0; margin-bottom: 8px; }
 .field input[type="time"].leer { background: var(--bg); border: 1px solid var(--line); border-radius: 9px; }
 .calc { display: block; font-size: 0.72rem; color: var(--accent); font-weight: 600; }
 .berechnet input { color: var(--accent); }
-.add-leg { align-self: flex-start; }
+.add-leg { align-self: stretch; min-height: 56px; }
+/* Fußweg 250 m vor oder nach den Verkehrsmitteln einfügen; gleich hoch wie „Weiteres Verkehrsmittel“ */
+.fuss-plus { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: -4px; }
+.fuss-plus .btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4px 10px; min-height: 56px; }
+.fuss-plus .fp-text { font-weight: 600; }
 #legs { display: flex; flex-direction: column; gap: 18px; }
 /* Verkehrsmittel-Block: Kopfzeile mit Griff zum Verschieben, Piktogramm und Titel */
 .leg-block { display: flex; flex-direction: column; gap: 8px; position: relative; }
@@ -223,8 +305,26 @@ legend { padding: 0; margin-bottom: 8px; }
 .vm-knopf.an .ic { background: color-mix(in srgb, var(--c) 30%, transparent); }
 .vm-wahl.fehlt .vm-knopf { border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
 .vm-wahl ~ .field:not([hidden]) { border-top: 1px solid var(--line); }
+/* Wegelänge als Auswahl-Pille in der Kopfzeile */
+.laenge { margin-left: auto; -webkit-appearance: none; appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 4px 12px; font-size: 0.9rem; font-weight: 600; text-align: center; text-align-last: center; min-height: 30px; }
+.laenge.leer { color: var(--muted); font-weight: 500; }
+.laenge.fehlt { border-color: var(--danger); color: var(--danger); }
+.laenge + .muell { margin-left: 0; }
 .muell.frage { width: auto; padding: 0 12px; color: #fff; background: var(--danger); font-size: 0.85rem; font-weight: 600; }
 .leg-block { scroll-margin-top: 8px; }
+/* Formular kompakt: alles bis „Weiteres Verkehrsmittel“ passt ohne Scrollen auf den Bildschirm */
+.unsichtbar { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#dlg-weg .sheet-body { gap: 12px; padding-top: 12px; }
+#dlg-weg fieldset { gap: 6px; }
+#dlg-weg .field { min-height: 42px; padding: 5px 0; }
+#dlg-weg .leg-block { gap: 6px; }
+#dlg-weg .leg-kopf { min-height: 26px; }
+#dlg-weg .vm-wahl { gap: 2px; padding: 6px 0 4px; }
+#dlg-weg .vm-knopf { padding: 4px 2px 3px; gap: 2px; font-size: 0.7rem; }
+#dlg-weg .vm-knopf .ic { width: 30px; height: 30px; border-radius: 9px; }
+#dlg-weg .vm-knopf .ic svg { width: 19px; height: 19px; }
+#dlg-weg .field input[type="time"] { min-height: 32px; line-height: 32px; }
+.sheet-head .link:focus:not(:focus-visible), .sheet-head .link:focus { outline: none; }
 /* Wegelänge: Knopf im Formular, Doppelrad unten */
 .muell { margin-left: auto; width: 34px; height: 34px; border: 0; background: none; color: var(--muted); display: grid; place-items: center; border-radius: 10px; }
 .muell svg { width: 19px; height: 19px; }
@@ -255,7 +355,7 @@ legend { padding: 0; margin-bottom: 8px; }
 
 
 <div class="app">
-  <button type="button" class="offen-hinweis" id="offen-hinweis" hidden><span id="offen-text"></span><span aria-hidden="true">›</span></button>
+  <div id="app-hinweis-platz" hidden><button type="button" class="offen-hinweis" id="offen-hinweis" hidden><span id="offen-text"></span><span aria-hidden="true">›</span></button></div>
 
   <!-- Vortag, Tag, Folgetag nebeneinander; der Finger schiebt die ganze Reihe -->
   <div class="pager" id="pager"><div class="track" id="track"></div></div>
@@ -263,10 +363,18 @@ legend { padding: 0; margin-bottom: 8px; }
 </div>
 
 <div class="dock">
-  <button class="fab second" id="btn-export" aria-label="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
+  <button class="fab second rund" id="btn-menue" aria-label="Menü"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.8"/><rect x="13" y="4" width="7" height="7" rx="1.8"/><rect x="4" y="13" width="7" height="7" rx="1.8"/><rect x="13" y="13" width="7" height="7" rx="1.8"/></svg></button>
   <button class="fab" id="fab-start"><span aria-hidden="true">▶</span> Weg starten</button>
-  <button class="fab laeuft" id="fab-ende" hidden aria-live="polite"><span class="zeile1"><span class="pulse" aria-hidden="true"></span>Weg beenden</span><span class="zeile2" id="laeuft-text"></span></button>
-  <button class="fab second" id="fab"><span aria-hidden="true">＋</span> Weg</button>
+  <button class="fab second rund" id="fab" aria-label="Weg nachtragen"><span aria-hidden="true">＋</span></button>
+</div>
+<!-- Unterwegs: ersetzt die untere Leiste, solange ein Weg läuft -->
+<div class="unterwegs" id="unterwegs" hidden>
+  <div class="uw-kopf"><span class="pulse" aria-hidden="true"></span><span class="uw-seit" id="uw-seit" aria-live="polite"></span><button type="button" class="uw-verwerfen" id="uw-verwerfen">Verwerfen</button></div>
+  <div class="uw-kette" id="uw-kette"></div>
+  <div class="uw-knoepfe">
+    <button type="button" class="uw-um" id="uw-um"><span aria-hidden="true">⇄</span> Umsteigen</button>
+    <button type="button" class="uw-an" id="uw-an"><span aria-hidden="true">■</span> Ankommen</button>
+  </div>
 </div>
 <div class="auswahl-info" id="auswahl-info" hidden aria-live="polite"></div>
 <div class="dock auswahl-dock" id="auswahl-dock" hidden>
@@ -281,7 +389,98 @@ legend { padding: 0; margin-bottom: 8px; }
   <button type="button" id="kopie-datum">Anderes Datum …</button>
   <button type="button" id="kopie-abbrechen" class="abbrechen">Abbrechen</button>
 </dialog>
-<div class="toast" id="toast" role="status" hidden><span id="toast-text"></span><button type="button" id="toast-aktion"></button></div>
+<!-- Blätter von unten: Verkehrsmittel (Start/Umstieg), Ziel (Ankommen), Menü -->
+<dialog class="blatt" id="dlg-vm" aria-labelledby="vm-titel">
+  <div class="blatt-griff" aria-hidden="true"></div>
+  <div class="blatt-kopf"><div><h2 id="vm-titel">Verkehrsmittel</h2><div class="blatt-unter" id="vm-unter"></div></div><button type="button" class="link" id="vm-abbrechen">Abbrechen</button></div>
+  <div class="seg zeitwahl" id="vm-zeit" role="group" aria-label="Zeitpunkt">
+    <button type="button" data-min="0" aria-pressed="true">Jetzt</button><button type="button" data-min="5" aria-pressed="false">vor 5 min</button><button type="button" data-min="10" aria-pressed="false">vor 10 min</button><label class="um-knopf" aria-pressed="false"><span id="vm-um-text">um …</span><input type="time" id="vm-um" aria-label="Uhrzeit wählen"></label>
+  </div>
+  <p class="gps-hinweis" id="vm-gps-hinweis" hidden>GPS nimmt deinen Standort von jetzt, die geschätzte Länge kann etwas abweichen.</p>
+  <div class="vm-wahl gross" id="vm-kacheln" role="group" aria-label="Verkehrsmittel"></div>
+</dialog>
+<dialog class="blatt" id="dlg-ziel" aria-labelledby="ziel-titel">
+  <div class="blatt-griff" aria-hidden="true"></div>
+  <div class="blatt-kopf"><div><h2 id="ziel-titel">Ziel?</h2><div class="blatt-unter mono" id="ziel-unter"></div></div><button type="button" class="link" id="ziel-abbrechen">Zurück</button></div>
+  <div class="seg zeitwahl" id="ziel-zeit" role="group" aria-label="Zeitpunkt">
+    <button type="button" data-min="0" aria-pressed="true">Jetzt</button><button type="button" data-min="5" aria-pressed="false">vor 5 min</button><button type="button" data-min="10" aria-pressed="false">vor 10 min</button><label class="um-knopf" aria-pressed="false"><span id="ziel-um-text">um …</span><input type="time" id="ziel-um" aria-label="Uhrzeit wählen"></label>
+  </div>
+  <p class="gps-hinweis" id="ziel-gps-hinweis" hidden>GPS nimmt deinen Standort von jetzt, die geschätzte Länge kann etwas abweichen.</p>
+  <div class="ziel-wahl" id="ziel-kacheln"></div>
+  <div class="ziel-frei" id="ziel-frei-zeile" hidden><input type="text" id="ziel-frei" placeholder="Neues Ziel" autocomplete="off"><button type="button" class="btn primary" id="ziel-ok">OK</button></div>
+</dialog>
+<dialog class="blatt" id="dlg-menue" aria-label="Menü">
+  <div class="blatt-griff" aria-hidden="true"></div>
+  <div class="menue-kacheln">
+    <button type="button" data-ziel="dlg-stat"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></i>Statistik</button>
+    <button type="button" data-ziel="dlg-exp"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></i>Export</button>
+    <button type="button" data-ziel="dlg-einst"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></i>Einstellungen</button>
+    <button type="button" data-ziel="dlg-hilfe"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 17h.01"/></svg></i>Hilfe</button>
+  </div>
+</dialog>
+<!-- Seiten aus dem Menü -->
+<dialog id="dlg-stat" class="seite-dlg" aria-labelledby="stat-titel">
+  <div class="sheet">
+    <div class="sheet-head"><button type="button" class="link" data-schliessen>‹ Wege</button><h2 id="stat-titel">Statistik</h2><span class="kopf-platz"></span></div>
+    <div class="sheet-body"><div class="bald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg><strong>Kommt bald</strong><span>Hier entstehen später deine Auswertungen.</span></div></div>
+  </div>
+</dialog>
+<dialog id="dlg-einst" class="seite-dlg" aria-labelledby="einst-titel">
+  <div class="sheet">
+    <div class="sheet-head"><button type="button" class="link" data-schliessen>‹ Wege</button><h2 id="einst-titel">Einstellungen</h2><span class="kopf-platz"></span></div>
+    <div class="sheet-body">
+      <section class="block">
+        <h3 class="label">GPS</h3>
+        <div class="group">
+          <label class="field"><span>Wegelänge per GPS schätzen</span><input type="checkbox" class="schalter" id="gps-an"></label>
+          <div class="field"><span>Standort-Zugriff</span><span class="wert" id="gps-status">…</span></div>
+          <label class="field"><span>Max. Ungenauigkeit</span><select id="gps-genau"><option value="100">100 m</option><option value="200">200 m</option><option value="300">300 m</option><option value="500">500 m</option></select></label>
+          <div class="field"><span>Standort testen</span><button type="button" class="btn" id="gps-test">Testen</button></div>
+        </div>
+        <p class="hint" id="gps-test-text" hidden></p>
+        <p class="hint">Die App fragt den Standort nur bei Start, Umstieg und Ankunft ab. Länge = Luftlinie × Umwegfaktor, gerundet auf die Stufen der Auswahlliste. Ungenauere Standorte werden nicht verwendet. Ist ein Standort so ungenau, dass es bei der Länge ins Gewicht fällt, bekommst du einen kurzen Hinweis.</p>
+      </section>
+      <section class="block">
+        <div class="block-head"><h3 class="label">Umwegfaktoren</h3><button type="button" class="link" id="gps-faktoren-reset">Standardwerte</button></div>
+        <div class="group" id="gps-faktoren"></div>
+      </section>
+      <section class="block">
+        <h3 class="label">Start- und Zielpunkte</h3>
+        <div class="group">
+          <label class="field"><span>Punkte speichern</span><input type="checkbox" class="schalter" id="gps-punkte"></label>
+          <div class="field"><span id="gps-punkte-anzahl"></span><button type="button" class="btn danger" id="gps-punkte-loeschen">Löschen</button></div>
+        </div>
+        <p class="hint">Gespeichert werden nur Start und Ziel jedes Weges, auf diesem Gerät und in deiner Sicherung. Sie sind für die spätere Orte-Funktion gedacht, z. B. „nach Hause“ automatisch als Ziel.</p>
+      </section>
+      <section class="block">
+        <h3 class="label">Daten</h3>
+        <div class="group">
+          <div class="field"><span id="einst-alles-text"></span><button type="button" class="btn danger" id="einst-alles">Alles löschen</button></div>
+        </div>
+        <p class="hint">Gelöscht werden nur Wege, Einstellungen und eigene Ziele bleiben. Einzelne Tage löschst du im Kalender: einen Tag gedrückt halten. Tipp: vorher unter Export eine Sicherung speichern.</p>
+      </section>
+    </div>
+  </div>
+</dialog>
+<dialog id="dlg-hilfe" class="seite-dlg" aria-labelledby="hilfe-titel">
+  <div class="sheet">
+    <div class="sheet-head"><button type="button" class="link" data-schliessen>‹ Wege</button><h2 id="hilfe-titel">Hilfe</h2><span class="kopf-platz"></span></div>
+    <div class="sheet-body">
+      <ol class="hilfe">
+        <li><b>Weg starten:</b> ▶ antippen und das Verkehrsmittel wählen.</li>
+        <li><b>Umsteigen:</b> antippen und das neue Verkehrsmittel wählen.</li>
+        <li><b>Ankommen:</b> antippen und das Ziel wählen. Die Wegelänge trägst du danach im Weg nach.</li>
+        <li><b>Zu spät getippt?</b> Oben im Fenster „vor 5 min“, „vor 10 min“ oder „um …“ wählen.</li>
+        <li><b>Vergessene Wege</b> trägst du mit ＋ nach.</li>
+        <li><b>Andere Tage:</b> nach links oder rechts wischen, oder aufs Datum tippen für den Kalender.</li>
+        <li><b>Tage löschen:</b> im Kalender einen Tag gedrückt halten, weitere antippen, dann „Löschen“.</li>
+        <li><b>Gedrückt halten</b> markiert Wege zum Kopieren oder Löschen.</li>
+        <li><b>Export</b> findest du im Menü ⊞.</li>
+      </ol>
+    </div>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status" popover="manual" hidden><span id="toast-text"></span><button type="button" id="toast-aktion"></button></div>
 
 
 <dialog class="kal" id="dlg-kal" aria-labelledby="kal-titel">
@@ -291,6 +490,7 @@ legend { padding: 0; margin-bottom: 8px; }
     <button type="button" id="kal-next" aria-label="Nächster Monat">›</button>
   </div>
   <div class="kal-grid" id="kal-grid"></div>
+  <div class="kal-fuss" id="kal-fuss" hidden><span id="kal-info"></span><div><button type="button" class="btn" id="kal-abbr">Abbrechen</button><button type="button" class="btn danger solid" id="kal-loe">Löschen</button></div></div>
 </dialog>
 
 
@@ -304,7 +504,7 @@ legend { padding: 0; margin-bottom: 8px; }
     </div>
     <div class="sheet-body">
       <fieldset>
-        <legend class="label">Zeit</legend>
+        <legend class="unsichtbar">Zeit</legend>
         <div class="group">
           <label class="field"><span>Datum</span><input type="date" id="f-datum" required></label>
           <div class="field" id="z-start"><label for="f-start">Startzeit<span class="calc" hidden>berechnet</span></label><span class="zeit-in"><button type="button" class="mini" id="f-start-jetzt">Jetzt</button><input type="time" id="f-start" required></span></div>
@@ -312,19 +512,22 @@ legend { padding: 0; margin-bottom: 8px; }
           <div class="field" id="z-ankunft"><label for="f-ankunft">Ankunftszeit<span class="calc" hidden>berechnet</span></label><span class="zeit-in"><button type="button" class="mini" id="f-ankunft-jetzt">Jetzt</button><input type="time" id="f-ankunft" required></span></div>
         </div>
         <div class="hint" id="f-plus1" hidden>Ankunft am nächsten Tag (+1). Der Weg zählt zum Starttag.</div>
-        <div class="hint">Zwei Werte eingeben, der dritte wird berechnet.</div>
       </fieldset>
 
       <fieldset>
-        <legend class="label">Zweck</legend>
+        <legend class="unsichtbar">Ziel</legend>
         <div class="group">
-          <label class="field"><span>Zweck</span><select id="f-zweck"></select></label>
-          <label class="field" id="f-zweck-frei-row" hidden><span>Neuer Zweck</span><input type="text" id="f-zweck-frei" placeholder="z. B. Uni" autocomplete="off"></label>
+          <label class="field"><span>Ziel</span><select id="f-zweck"></select></label>
+          <label class="field" id="f-zweck-frei-row" hidden><span>Neues Ziel</span><input type="text" id="f-zweck-frei" placeholder="z. B. Uni" autocomplete="off"></label>
         </div>
       </fieldset>
 
       <div id="legs"></div>
       <button type="button" class="btn add-leg" id="add-leg">＋ Weiteres Verkehrsmittel</button>
+      <div class="fuss-plus" id="fuss-plus">
+        <button type="button" class="btn" id="fuss-davor"><span class="fp-text">＋ davor</span><span class="vm" id="fuss-davor-ic"></span></button>
+        <button type="button" class="btn" id="fuss-danach"><span class="fp-text">＋ danach</span><span class="vm" id="fuss-danach-ic"></span></button>
+      </div>
 
     </div>
     <div class="sheet-fuss">
@@ -461,7 +664,7 @@ legend { padding: 0; margin-bottom: 8px; }
   function fehlt(w) {
     const f = [];
     if (!w.start || !w.ankunft) f.push("Zeit");
-    if (!w.zweck) f.push("Zweck");
+    if (!w.zweck) f.push("Ziel");
     const et = w.etappen || [];
     if (!et.length || et.some((e) => !e.vm)) f.push("Verkehrsmittel");
     if (!et.length || et.some((e) => !e.m)) f.push("Wegelänge");   // jede Etappe braucht ihre Länge
@@ -506,17 +709,36 @@ legend { padding: 0; margin-bottom: 8px; }
   }
 
   let toastTimer, toastFn = null;
+  // Die Meldung liegt als Popover in der obersten Ebene, damit sie auch über offenen Seiten sichtbar und antippbar ist.
+  // Offene Seiten (modale Dialoge) machen alles außerhalb unantippbar: die Meldung wandert deshalb in die oberste offene Seite.
+  function toastAn() {
+    const t = $("toast"), offen = [...document.querySelectorAll("dialog[open]")].filter((d) => d.matches(":modal"));
+    const ziel = offen.length ? offen[offen.length - 1] : document.body;
+    t.hidden = false;
+    if (t.showPopover) { try { if (t.matches(":popover-open")) t.hidePopover(); } catch (_) {} }
+    if (t.parentElement !== ziel) ziel.append(t);
+    if (t.showPopover) { try { t.showPopover(); } catch (_) {} }
+  }
+  // Schließt sich die Seite mit der Meldung, die Meldung wieder in die Hauptansicht holen
+  document.querySelectorAll("dialog").forEach((d) => d.addEventListener("close", () => {
+    const t = $("toast");
+    if (d.contains(t)) { if (!t.hidden) setTimeout(toastAn, 0); else document.body.append(t); }
+  }));
+  function toastAus() {
+    const t = $("toast"); t.hidden = true; toastFn = null; clearTimeout(toastTimer);
+    if (t.hidePopover) { try { if (t.matches(":popover-open")) t.hidePopover(); } catch (_) {} }
+  }
   function toast(text, aktion) {
     $("toast-text").textContent = text;
     $("toast-aktion").textContent = aktion ? aktion.text : "";
     toastFn = aktion ? aktion.fn : null;
-    $("toast").hidden = false;
+    toastAn();
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { $("toast").hidden = true; toastFn = null; }, aktion ? 5000 : 2600);
+    toastTimer = setTimeout(toastAus, aktion ? 5000 : 2600);
   }
   $("toast-aktion").addEventListener("click", () => {
     const fn = toastFn;
-    $("toast").hidden = true; toastFn = null; clearTimeout(toastTimer);
+    toastAus();
     if (fn) fn();
   });
 
@@ -556,6 +778,7 @@ legend { padding: 0; margin-bottom: 8px; }
   }
   function cacheSchreiben() {
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ wege, settings, quelle: store.mode })); } catch (_) {}
+    try { liveMelden(); } catch (_) {}   // vor dem Start des Skripts noch nicht bereit
   }
   function speicherHinweis() {
     $("s-storage").textContent = store.mode === "db"
@@ -644,15 +867,16 @@ legend { padding: 0; margin-bottom: 8px; }
     const knopf = document.createElement("button"); knopf.type = "button"; knopf.className = "daypick";
     knopf.setAttribute("aria-label", "Kalender öffnen");
     knopf.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
-    const wd = document.createElement("div"); wd.className = "wd";
-    wd.textContent = d.toLocaleDateString("de-DE", { weekday: "long" }) + (datum === heute() ? " · heute" : "");
     const dt = document.createElement("div"); dt.className = "dt";
-    dt.textContent = d.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+    dt.textContent = `${d.toLocaleDateString("de-DE", { weekday: "short" }).replace(/\.?$/, ".")} ${deDatum(datum)}`;
     const pfeil = document.createElement("span"); pfeil.className = "pfeil"; pfeil.setAttribute("aria-hidden", "true");
-    knopf.append(dt, pfeil);
-    kopf.append(wd, knopf);
+    knopf.append(dt);
+    if (datum === heute()) { const h = document.createElement("span"); h.className = "heute"; h.textContent = "heute"; knopf.append(h); }
+    knopf.append(pfeil);
+    kopf.append(knopf);
     const ul = document.createElement("ul"); ul.className = "trips";
-    if (mitte) { knopf.id = "daypick"; wd.id = "day-wd"; dt.id = "day-dt"; ul.id = "trips"; }
+    ul.dataset.tag = datum;
+    if (mitte) { knopf.id = "daypick"; dt.id = "day-dt"; ul.id = "trips"; }
     seite.append(kopf, ul);
 
     const liste = wegeAm(datum);
@@ -660,7 +884,7 @@ legend { padding: 0; margin-bottom: 8px; }
     if (!liste.length) {
       const li = document.createElement("li"); li.className = "empty";
       const s = document.createElement("strong"); s.textContent = "Noch keine Wege an diesem Tag";
-      li.append(s, "Tippe beim Losgehen auf „Weg starten“ und beim Ankommen auf „Weg beenden“. Vergessene Wege trägst du mit „＋ Weg“ nach. Zu anderen Tagen wischst du nach links oder rechts.");
+      li.append(s, "Tippe beim Losgehen auf „Weg starten“, beim Umsteigen auf „Umsteigen“ und am Ziel auf „Ankommen“. Vergessene Wege trägst du mit ＋ nach. Zu anderen Tagen wischst du nach links oder rechts.");
       ul.append(li);
     }
     liste.forEach((w, i) => {
@@ -725,14 +949,27 @@ legend { padding: 0; margin-bottom: 8px; }
   window.addEventListener("resize", einpassen);
 
   function render() {
+    const altListe = $("trips"), altTag = altListe && altListe.dataset.tag, altPos = altListe ? altListe.scrollTop : 0;
+    if ($("offen-hinweis").closest(".seite")) $("app-hinweis-platz").append($("offen-hinweis"));   // vor dem Neubau retten
     $("track").replaceChildren(...[-1, 0, 1].map((k) => seiteBauen(verschiebe(tag, k), k === 0)));
+    if (altTag === tag) $("trips").scrollTop = altPos;
     einpassen();
     auswahlZeigen();
     const offen = offeneWege().length;
     $("offen-hinweis").hidden = !offen;
     $("offen-text").textContent = `${offen} ${offen === 1 ? "Weg" : "Wege"} unvollständig`;
+    // Hinweis fest unter dem Tageskopf, auf allen drei Seiten gleich, damit beim Wischen nichts springt
+    $("track").querySelectorAll(".seite").forEach((seite) => {
+      const b = seite.classList.contains("neben") ? $("offen-hinweis").cloneNode(true) : $("offen-hinweis");
+      if (b !== $("offen-hinweis")) { b.removeAttribute("id"); b.querySelectorAll("[id]").forEach((x) => x.removeAttribute("id")); }
+      seite.insertBefore(b, seite.querySelector(".trips"));
+    });
     laufendZeigen();
+    // Offene Löschen-/Einstellungsseite nur neu zeichnen, wenn sich die Wege wirklich geändert haben
+    const fp = wege.map((w) => w.id + w.datum).join();
+    if (fp !== wegeStand) { wegeStand = fp; window.dispatchEvent(new Event("wege-geaendert")); }
   }
+  let wegeStand = "";
 
   // ---------- Gedrückt halten: Auswahlmodus mit Mehrfachauswahl ----------
   // Halten markiert den Weg; danach markiert jeder Tipp weitere Wege oder hebt die Markierung auf.
@@ -773,8 +1010,8 @@ legend { padding: 0; margin-bottom: 8px; }
       t.classList.toggle("markiert", auswahl.has(t.dataset.id));
       t.setAttribute("aria-pressed", an ? String(auswahl.has(t.dataset.id)) : "false");
     });
-    document.querySelector(".dock:not(.auswahl-dock)").hidden = an;
     $("auswahl-dock").hidden = !an;
+    leisteZeigen();
     $("auswahl-info").hidden = !an;
     $("auswahl-info").textContent = `${auswahl.size} ausgewählt`;
   }
@@ -815,36 +1052,509 @@ legend { padding: 0; margin-bottom: 8px; }
       { text: "Rückgängig", fn: () => { tag = weg[0].datum; weg.forEach(wegSichern); } });
   });
 
+  // ---------- GPS: Standort nur bei Start, Umstieg und Ankunft ----------
+  const GPS_STANDARD = { an: true, genauigkeit: 300, punkte: true,
+    faktoren: { fuss: 1.3, rad: 1.3, tram: 1.4, zug: 1.2, bus: 1.4, taxi: 1.3, moped: 1.3, auto: 1.3 } };
+  function gpsEinst() {
+    let g = settings.gps || {};
+    if (g.genauigkeit && !g.v) g = { ...g, genauigkeit: Math.max(g.genauigkeit, 300) };   // alte Grenze 100 m war zu streng
+    g = { ...g, v: 2 };
+    return { ...GPS_STANDARD, ...g, faktoren: { ...GPS_STANDARD.faktoren, ...(g.faktoren || {}) } };
+  }
+  function gpsSetzen(teil) { settings = { ...settings, gps: { ...gpsEinst(), ...teil } }; einstellungenSichern(); }
+  // In der App fragt die Hülle (Swift) den Standort ab, im Browser die Geolocation-Schnittstelle.
+  const ortWartet = new Map();
+  let ortNr = 0;
+  window.ortAntwort = (id, d) => { const f = ortWartet.get(id); if (f) { ortWartet.delete(id); f(d || {}); } };
+  function ortFragen(art) {
+    return new Promise((ok) => {
+      const bruecke = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.ort;
+      if (bruecke) {
+        const id = `o${++ortNr}`;
+        ortWartet.set(id, ok);
+        setTimeout(() => window.ortAntwort(id, { fehler: "Zeitüberschreitung" }), 20000);
+        bruecke.postMessage({ id, art });
+        return;
+      }
+      if (art === "status") { ok({ status: navigator.geolocation ? "browser" : "fehlt" }); return; }
+      if (!navigator.geolocation) { ok({ fehler: "fehlt" }); return; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => ok({ lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy, ts: pos.timestamp }),
+        (e) => ok({ fehler: e.code === 1 ? "verweigert" : "kein Standort" }),
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 });
+    });
+  }
+  // Ein Punkt {lat, lon, acc} oder null (GPS aus, verweigert, kein Empfang)
+  function standort() {
+    if (!gpsEinst().an) return Promise.resolve(null);
+    return ortFragen("position").then((d) => (typeof d.lat === "number"
+      ? { lat: Math.round(d.lat * 1e6) / 1e6, lon: Math.round(d.lon * 1e6) / 1e6, acc: Math.round(d.acc) } : null));
+  }
+  function luftlinie(a, b) {
+    const rad = Math.PI / 180, dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
+    return 2 * 6371000 * Math.asin(Math.sqrt(h));
+  }
+  function vmSchluessel(vm) { const k = VM_KNOEPFE.find(([n]) => n === vm); return k ? k[1] : null; }
+  // Luftlinie × Umwegfaktor, auf die nächste Stufe der Auswahlliste gerundet
+  function laengeSchaetzen(vm, a, b) {
+    const g = gpsEinst();
+    if (!a || !b || a.acc > g.genauigkeit || b.acc > g.genauigkeit) return null;
+    const m = luftlinie(a, b) * (g.faktoren[vmSchluessel(vm)] || 1.3);
+    return LAENGEN.reduce((best, x) => (Math.abs(x - m) < Math.abs(best - m) ? x : best), LAENGEN[0]);
+  }
+  // Ungenau nur, wenn die Messfehler gemessen an der Strecke ins Gewicht fallen (> 25 % und über 50 m)
+  function gpsUngenau(a, b) {
+    if (!a || !b) return false;
+    const fehler = a.acc + b.acc;
+    return fehler > 50 && fehler > 0.25 * luftlinie(a, b);
+  }
+  // Hinweis erst zeigen, wenn kein „Rückgängig“ mehr angeboten wird
+  function hinweisSpaeter(text) {
+    const zeigen = () => { if (toastFn) setTimeout(zeigen, 1000); else toast(text); };
+    zeigen();
+  }
+  // Standort je Etappe des laufenden Weges: erst als Versprechen, nach dem Eintreffen im laufenden Weg gespeichert
+  const ortVersprechen = new Map();
+  function etappenOrtHolen(l, i) {
+    const key = `${l.ts}:${i}`, v = standort();
+    ortVersprechen.set(key, v);
+    v.then((pos) => {
+      const akt = settings.laufend;
+      if (!pos || !akt || akt.ts !== l.ts || !akt.etappen || !akt.etappen[i]) return;
+      settings = { ...settings, laufend: { ...akt, etappen: akt.etappen.map((e, k) => (k === i ? { ...e, pos } : e)) } };
+      einstellungenSichern();
+    });
+  }
+  function etappenOrt(l, i) {
+    const e = (l.etappen || [])[i];
+    if (e && e.pos) return Promise.resolve(e.pos);
+    return ortVersprechen.get(`${l.ts}:${i}`) || Promise.resolve(null);
+  }
+
   // ---------- Laufender Weg ----------
+  // laufend: {datum, start, ts, etappen: [{vm, zeit, ts}]}; Starten, Umsteigen und Ankommen gehen über Blätter von unten.
+  function leisteZeigen() {
+    const l = settings.laufend, an = auswahl.size > 0;
+    document.body.classList.toggle("laeuft", !!l && !an);
+    document.querySelector(".dock:not(.auswahl-dock)").hidden = an || !!l;
+    $("unterwegs").hidden = an || !l;
+  }
   function laufendZeigen() {
+    leisteZeigen();
     const l = settings.laufend;
-    $("fab-start").hidden = !!l;
-    $("fab-ende").hidden = !l;
     if (!l) return;
     const min = Math.max(0, Math.floor((Date.now() - l.ts) / 60000));
     const tagText = l.datum === heute() ? "" : ` (${deDatum(l.datum).slice(0, 6)})`;
-    $("laeuft-text").textContent = `seit ${l.start}${tagText} · ${dauerText(min)}`;
+    $("uw-seit").innerHTML = "";
+    const klein = document.createElement("small"); klein.textContent = `· ${dauerText(min)}`;
+    $("uw-seit").append(`Unterwegs seit ${l.start}${tagText}`, klein);
+    const et = l.etappen || [];
+    $("uw-kette").replaceChildren(...et.flatMap((e, i) => {
+      const box = document.createElement("div"); box.className = "uw-etappe" + (i === et.length - 1 ? " jetzt" : "");
+      const p = pikto(e.vm), ic = document.createElement("span"); ic.className = "ic";
+      ic.style.setProperty("--c", p.farbe); ic.innerHTML = piktoSvg(p);
+      box.title = e.vm; box.append(ic, `ab ${e.zeit}`);
+      if (!i) return [box];
+      const pf = document.createElement("span"); pf.className = "uw-pfeil"; pf.setAttribute("aria-hidden", "true"); pf.textContent = "›";
+      return [pf, box];
+    }));
+    $("uw-kette").hidden = !et.length;
   }
   setInterval(() => { if (settings.laufend) laufendZeigen(); }, 20000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) laufendZeigen(); });
 
-  $("fab-start").addEventListener("click", () => {
-    const jetzt = new Date();
-    settings = { ...settings, laufend: { datum: isoDatum(jetzt), start: uhrzeit(jetzt), ts: jetzt.getTime() } };
+  function laufendSetzen(l) {
+    settings = { ...settings, laufend: l };
     einstellungenSichern();
-    tag = settings.laufend.datum;
+    if (l) tag = l.datum;
     render();
+  }
+
+  // Zeitwahl oben im Blatt: Jetzt, vor 5 min, vor 10 min oder eine Uhrzeit
+  function zeitwahl(p) {
+    const box = $(`${p}-zeit`), um = $(`${p}-um`), umText = $(`${p}-um-text`);
+    let wahl = 0, onWechsel = () => {};
+    const zeigen = () => {
+      box.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.min) === wahl)));
+      box.querySelector(".um-knopf").setAttribute("aria-pressed", String(wahl === "um"));
+      umText.textContent = wahl === "um" && um.value ? `um ${um.value.slice(0, 5)}` : "um …";
+      $(`${p}-gps-hinweis`).hidden = wahl === 0 || !gpsEinst().an;
+      onWechsel();
+    };
+    box.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { wahl = Number(b.dataset.min); zeigen(); } });
+    um.addEventListener("change", () => { wahl = um.value ? "um" : 0; zeigen(); });
+    um.addEventListener("input", () => { if (um.value) { wahl = "um"; zeigen(); } });
+    return {
+      reset() { wahl = 0; um.value = uhrzeit(new Date()); zeigen(); },
+      set onWechsel(fn) { onWechsel = fn; },
+      // Gewählter Zeitpunkt; eine Uhrzeit nach „jetzt“ gilt als gestern (nach Mitternacht)
+      zeit() {
+        const jetzt = new Date();
+        if (wahl !== "um") return new Date(jetzt.getTime() - wahl * 60000);
+        const [h, m] = um.value.split(":").map(Number), d = new Date(jetzt);
+        d.setHours(h, m, 0, 0);
+        if (d.getTime() > jetzt.getTime() + 60000) d.setDate(d.getDate() - 1);
+        return d;
+      },
+    };
+  }
+  const vmZeit = zeitwahl("vm"), zielZeit = zeitwahl("ziel");
+
+  function blattSchliessenBeiHintergrund(dlg) {
+    dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+  }
+  ["dlg-vm", "dlg-ziel", "dlg-menue"].forEach((id) => blattSchliessenBeiHintergrund($(id)));
+
+  // Blatt „Verkehrsmittel“: beim Start und bei jedem Umstieg
+  let vmModus = "start";
+  function vmBlattOeffnen(modus) {
+    vmModus = modus;
+    if (!$("vm-kacheln").children.length) VM_KNOEPFE.forEach(([name, key]) => {
+      const k = document.createElement("button"); k.type = "button"; k.className = "vm-knopf"; k.dataset.vm = name;
+      const p = PIKTO[key]; k.style.setProperty("--c", p.farbe);
+      k.innerHTML = `<span class="ic">${piktoSvg(p)}</span>`; k.append(name);
+      $("vm-kacheln").append(k);
+    });
+    const l = settings.laufend, et = (l && l.etappen) || [], letzte = et[et.length - 1];
+    $("vm-titel").textContent = modus === "start" || !et.length ? "Verkehrsmittel" : `Verkehrsmittel ${et.length + 1}`;
+    $("vm-unter").textContent = modus === "um" && letzte ? `Umstieg · bisher ${letzte.vm} seit ${letzte.zeit}` : "";
+    $("vm-kacheln").querySelectorAll(".vm-knopf").forEach((k) => k.classList.toggle("aus", modus === "um" && !!letzte && k.dataset.vm === letzte.vm));
+    vmZeit.reset();
+    $("vm-zeit").hidden = modus === "um";   // Umstieg zählt immer ab jetzt
+    $("vm-gps-hinweis").hidden = true;
+    $("dlg-vm").showModal();
+    if (document.activeElement) document.activeElement.blur();
+  }
+  $("vm-kacheln").addEventListener("click", (e) => {
+    const k = e.target.closest(".vm-knopf"); if (!k) return;
+    let t = vmZeit.zeit();
+    $("dlg-vm").close();
+    if (vmModus === "start") {
+      laufendSetzen({ datum: isoDatum(t), start: uhrzeit(t), ts: t.getTime(), etappen: [{ vm: k.dataset.vm, zeit: uhrzeit(t), ts: t.getTime() }] });
+      etappenOrtHolen(settings.laufend, 0);
+      return;
+    }
+    const l = settings.laufend; if (!l) return;
+    const et = l.etappen || [];
+    const frueheste = et.length ? et[et.length - 1].ts : l.ts;
+    if (t.getTime() < frueheste) t = new Date(frueheste);
+    const vorher = l;
+    laufendSetzen({ ...l, etappen: [...et, { vm: k.dataset.vm, zeit: uhrzeit(t), ts: t.getTime() }] });
+    etappenOrtHolen(settings.laufend, et.length);
+    const anzahl = et.length + 1;
+    // Rückgängig nur, solange derselbe Weg mit dieser Etappenzahl läuft
+    toast(`Umgestiegen auf ${k.dataset.vm}`, { text: "Rückgängig", fn: () => {
+      const akt = settings.laufend;
+      if (akt && akt.ts === vorher.ts && (akt.etappen || []).length === anzahl) laufendSetzen({ ...vorher, etappen: akt.etappen.slice(0, -1) });
+    } });
   });
-  $("fab-ende").addEventListener("click", () => {
+  $("vm-abbrechen").addEventListener("click", () => $("dlg-vm").close());
+  $("fab-start").addEventListener("click", () => vmBlattOeffnen("start"));
+  $("uw-um").addEventListener("click", () => vmBlattOeffnen("um"));
+
+  // Verwerfen: sofort weg, 5 s Rückgängig
+  $("uw-verwerfen").addEventListener("click", () => {
+    const vorher = settings.laufend;
+    laufendSetzen(null);
+    toast("Weg verworfen", { text: "Rückgängig", fn: () => { if (!settings.laufend) laufendSetzen(vorher); } });
+  });
+
+  // Blatt „Ziel?“: Ankunftszeit wählen, Ziel antippen speichert den Weg
+  function ankunftZeit() {
+    const l = settings.laufend, t = zielZeit.zeit();
+    return l && t.getTime() < l.ts ? new Date(l.ts) : t;
+  }
+  let zielOrt = Promise.resolve(null), zielSchaetzung = "";
+  function zielUnterZeigen() {
+    const l = settings.laufend; if (!l) return;
+    const t = ankunftZeit();
+    const min = Math.max(0, Math.round((t.getTime() - l.ts) / 60000));
+    $("ziel-unter").textContent = `${l.start} – ${uhrzeit(t)} · ${dauerText(min)}${zielSchaetzung}`;
+  }
+  // Längen je Etappe: Etappe i läuft von ihrem Startpunkt bis zum nächsten Umstieg bzw. zum Ziel
+  function laengenSchaetzen(l, ziel) {
+    const et = l.etappen || [];
+    return Promise.all([...et.map((_, i) => etappenOrt(l, i)), ziel]).then((pkt) => {
+      const m = et.map((e, i) => laengeSchaetzen(e.vm, pkt[i], pkt[i + 1]));
+      const ungenau = et.map((e, i) => m[i] != null && gpsUngenau(pkt[i], pkt[i + 1]));
+      return { punkte: pkt, m, ungenau };
+    });
+  }
+  zielZeit.onWechsel = zielUnterZeigen;
+  $("uw-an").addEventListener("click", () => {
+    const ziele = zweckListe();
+    $("ziel-kacheln").replaceChildren(...ziele.map((z) => {
+      const b = document.createElement("button"); b.type = "button"; b.dataset.ziel = z; b.textContent = z; return b;
+    }));
+    const anderes = document.createElement("button"); anderes.type = "button"; anderes.className = "neben"; anderes.id = "ziel-anderes"; anderes.textContent = "Anderes …";
+    const spaeter = document.createElement("button"); spaeter.type = "button"; spaeter.className = "neben spaeter"; spaeter.dataset.ziel = ""; spaeter.textContent = "Später";
+    $("ziel-kacheln").append(anderes, spaeter);
+    $("ziel-frei-zeile").hidden = true; $("ziel-frei").value = "";
+    zielSchaetzung = "";
     const l = settings.laufend;
-    if (!l) return;
-    const w = { id: neueId(), datum: l.datum, start: l.start, ankunft: uhrzeit(new Date()), zweck: "", etappen: [], erstellt: Date.now() };
+    zielOrt = l && (l.etappen || []).length ? standort() : Promise.resolve(null);
+    if (l) laengenSchaetzen(l, zielOrt).then(({ m, ungenau }) => {
+      if (!settings.laufend || settings.laufend.ts !== l.ts || !m.length || m.some((x) => x == null)) return;
+      zielSchaetzung = ` · ≈ ${laengeLang(m.reduce((a, b) => a + b, 0))}${ungenau.some(Boolean) ? " (GPS ungenau)" : ""}`;
+      zielUnterZeigen();
+    });
+    zielZeit.reset();
+    $("dlg-ziel").showModal();
+    if (document.activeElement) document.activeElement.blur();
+  });
+  $("ziel-kacheln").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.id === "ziel-anderes") { $("ziel-frei-zeile").hidden = false; $("ziel-frei").focus(); return; }
+    ankommen(b.dataset.ziel);
+  });
+  $("ziel-ok").addEventListener("click", () => { const z = $("ziel-frei").value.trim(); if (z) ankommen(z); });
+  $("ziel-frei").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("ziel-ok").click(); } });
+  $("ziel-abbrechen").addEventListener("click", () => $("dlg-ziel").close());
+  function ankommen(ziel) {
+    const l = settings.laufend; if (!l) return;
+    const t = ankunftZeit();
+    $("dlg-ziel").close();
+    ankommenMit(l, ziel, t, zielOrt);
+  }
+  // Weg aus dem laufenden Weg speichern; ort = Versprechen auf den Zielpunkt (oder null)
+  function ankommenMit(l, ziel, t, ort) {
+    const w = { id: neueId(), datum: l.datum, start: l.start, ankunft: uhrzeit(t), zweck: ziel || "",
+      etappen: (l.etappen || []).map((e) => ({ vm: e.vm, m: null, ab: e.zeit })), erstellt: Date.now() };
     w.dauer = dauerVon(w);
+    if (ziel && !(settings.zwecke || []).includes(ziel) && !ZWECKE.includes(ziel)) settings = { ...settings, zwecke: [...(settings.zwecke || []), ziel] };
     settings = { ...settings, laufend: null };
     einstellungenSichern();
     tag = w.datum;
     wegSichern(w);
+    toast(ziel ? `Weg nach „${ziel}“ gespeichert` : "Weg gespeichert", { text: "Rückgängig", fn: () => { if (settings.laufend) return; wegLoeschen(w.id); laufendSetzen(l); } });
+    // GPS-Schätzung nachtragen, sobald alle Punkte da sind (nur leere Längen)
+    laengenSchaetzen(l, ort).then(({ punkte, m, ungenau }) => {
+      const akt = wege.find((x) => x.id === w.id);
+      if (!akt) return;
+      const unsicher = akt.etappen.filter((e, i) => e.m == null && m[i] && ungenau[i]).map((e) => e.vm);
+      if (unsicher.length) hinweisSpaeter(`GPS war ungenau: Länge ${unsicher.join(", ")} bitte prüfen`);
+      const etappen = akt.etappen.map((e, i) => (e.m == null && m[i] ? { ...e, m: m[i] } : e));
+      const neu = { ...akt, etappen };
+      const start = punkte[0], ende = punkte[punkte.length - 1];
+      if (gpsEinst().punkte && (start || ende)) neu.gps = { start: start || null, ziel: ende || null };
+      if (JSON.stringify(neu) !== JSON.stringify(akt)) wegSichern(neu);
+    });
+  }
+
+  // ---------- Widget und Live-Aktivität (nur in der iPhone-App) ----------
+  // Tipps im Widget oder auf dem Sperrbildschirm führt die Hülle (Swift) im Hintergrund aus und merkt sie sich.
+  // Die Seite holt sie beim Öffnen ab und meldet umgekehrt jeden Stand, damit die Karte auf dem Sperrbildschirm stimmt.
+  const liveBruecke = () => window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.live;
+  const liveWartet = new Map();
+  let liveBereit = false, liveHolt = false, liveNochmal = false, liveZuletzt = "", liveTimer = 0, liveNr = 0, liveLaufZuletzt = "";
+  window.liveAntwort = (id, d) => { const f = liveWartet.get(id); if (f) { liveWartet.delete(id); f(d); } };
+  // Häufigste zuerst; Einträge der Grundliste ohne Treffer hinten anhängen
+  function haeufigste(werte, basis) {
+    const n = new Map();
+    werte.filter(Boolean).forEach((x) => n.set(x, (n.get(x) || 0) + 1));
+    const oben = [...n.keys()].sort((a, b) => n.get(b) - n.get(a));
+    return [...oben, ...basis.filter((x) => !n.has(x))];
+  }
+  function liveMelden(sofort) {
+    if (!liveBruecke() || !liveBereit) return;
+    clearTimeout(liveTimer);
+    // Weg gestartet, umgestiegen oder angekommen: sofort melden, damit die Karte entsteht, solange die App noch vorne ist
+    const lk = JSON.stringify(settings.laufend ? [settings.laufend.ts, (settings.laufend.etappen || []).length] : null);
+    if (lk !== liveLaufZuletzt) sofort = true;
+    const senden = () => {
+      if (liveHolt) return;   // erst abholen, sonst überschreibt ein veralteter Stand die Karte
+      const l = settings.laufend;
+      const ziele = haeufigste(wege.map((w) => w.zweck), ZWECKE).slice(0, 5);
+      const d = {
+        art: "zustand", gps: gpsEinst().an,
+        laufend: l ? { ts: l.ts, etappen: (l.etappen || []).map((e) => ({ vm: e.vm, ts: e.ts })) } : null,
+        vms: haeufigste(wege.flatMap((w) => (w.etappen || []).map((e) => e.vm)), VERKEHRSMITTEL).slice(0, 8),
+        ziele, andere: zweckListe().filter((z) => !ziele.includes(z)),
+      };
+      const text = JSON.stringify(d);
+      if (text === liveZuletzt) return;
+      liveZuletzt = text;
+      liveLaufZuletzt = JSON.stringify(l ? [l.ts, (l.etappen || []).length] : null);
+      liveBruecke().postMessage(d);
+    };
+    if (sofort) senden(); else liveTimer = setTimeout(senden, 300);
+  }
+  // Beim Sperren sofort melden, sonst bleibt die Karte auf dem Sperrbildschirm auf dem alten Stand
+  document.addEventListener("visibilitychange", () => { if (document.hidden) liveMelden(true); });
+  window.addEventListener("pagehide", () => liveMelden(true));
+  function liveAnwenden(e) {
+    const t = new Date(e.ts);
+    ["dlg-vm", "dlg-ziel"].forEach((id) => { if ($(id).open) $(id).close(); });
+    if (e.art === "oeffnen") {
+      // „Andere …“ auf dem Sperrbildschirm: passendes Blatt öffnen (nur wenn der Tipp frisch ist)
+      if (!settings.laufend || Date.now() - e.ts > 120000) return;
+      if (e.ansicht === "ziel") $("uw-an").click(); else vmBlattOeffnen("um");
+      return;
+    }
+    const l = settings.laufend;
+    // Nie vor dem Start bzw. vor dem letzten Umstieg (wie in der App)
+    const letzte = l ? Math.max(l.ts, ...(l.etappen || []).map((x) => x.ts || 0)) : 0;
+    const zeit = l && t.getTime() < letzte ? new Date(letzte) : t;
+    if (e.art === "umstieg" && !l) return;            // Weg wurde inzwischen in der App beendet
+    if (e.art === "ziel" && l && e.ts < l.ts) return;  // Tipp gehört zu einem früheren Weg
+    if (e.art === "start" || e.art === "umstieg") {
+      const et = { vm: e.vm, zeit: uhrzeit(zeit), ts: zeit.getTime() };
+      if (e.pos) et.pos = e.pos;
+      if (!l) laufendSetzen({ datum: isoDatum(t), start: uhrzeit(t), ts: e.ts, etappen: [et] });
+      else laufendSetzen({ ...l, etappen: [...(l.etappen || []), et] });
+      return;
+    }
+    if (e.art === "ziel" && l) ankommenMit(l, e.ziel || "", zeit, Promise.resolve(e.pos || null));
+  }
+  window.liveAbholen = () => {
+    const b = liveBruecke(); if (!b) return;
+    if (liveHolt) { liveNochmal = true; return; }
+    liveHolt = true;
+    const id = `l${++liveNr}`;
+    clearTimeout(liveTimer);
+    liveWartet.set(id, (ereignisse) => {
+      try {
+        // Jeder Tipp hat eine Nummer: schon eingetragene überspringen, danach der Hülle bestätigen
+        let erledigt = [];
+        try { erledigt = JSON.parse(localStorage.getItem("wegetagebuch.live") || "[]"); } catch (_) {}
+        const nrs = [];
+        (ereignisse || []).forEach((e) => {
+          if (e.nr && erledigt.includes(e.nr)) { nrs.push(e.nr); return; }
+          try { liveAnwenden(e); } catch (_) {}
+          if (e.nr) { nrs.push(e.nr); erledigt.push(e.nr); }
+        });
+        try { localStorage.setItem("wegetagebuch.live", JSON.stringify(erledigt.slice(-100))); } catch (_) {}
+        if (nrs.length) b.postMessage({ art: "erledigt", nrs });
+      } finally {
+        liveHolt = false; liveBereit = true; liveZuletzt = "";
+        liveMelden();
+        if (liveNochmal) { liveNochmal = false; window.liveAbholen(); }
+      }
+    });
+    // Kommt keine Antwort (App wurde dazwischen pausiert), nicht für immer blockieren.
+    // Die Anfrage bleibt offen: eine späte Antwort wird trotzdem noch eingetragen.
+    setTimeout(() => { if (liveWartet.has(id) && liveHolt) { liveHolt = false; liveBereit = true; } }, 10000);
+    b.postMessage({ art: "abholen", id });
+  };
+
+  // ---------- Einstellungen: GPS ----------
+  const STATUS_TEXT = { erlaubt: "Erlaubt", verweigert: "Nicht erlaubt (iOS-Einstellungen › Wegetagebuch)", offen: "Wird beim ersten Weg gefragt", browser: "Über den Browser", fehlt: "Nicht verfügbar" };
+  function einstOeffnen() {
+    const g = gpsEinst();
+    $("gps-an").checked = g.an;
+    $("gps-genau").value = String(g.genauigkeit);
+    $("gps-punkte").checked = g.punkte;
+    $("gps-test-text").hidden = true;
+    $("gps-status").textContent = "…";
+    ortFragen("status").then((d) => { $("gps-status").textContent = STATUS_TEXT[d.status] || d.status || "–"; });
+    const stufen = []; for (let f = 100; f <= 200; f += 5) stufen.push(f / 100);
+    $("gps-faktoren").replaceChildren(...VM_KNOEPFE.map(([name, key]) => {
+      const zeile = document.createElement("label"); zeile.className = "field";
+      const n = document.createElement("span"); n.className = "faktor-name";
+      const ic = document.createElement("span"); ic.className = "ic"; ic.style.setProperty("--c", PIKTO[key].farbe); ic.innerHTML = piktoSvg(PIKTO[key]);
+      n.append(ic, name);
+      const sel = document.createElement("select"); sel.dataset.key = key; sel.setAttribute("aria-label", `Umwegfaktor ${name}`);
+      sel.append(...stufen.map((f) => new Option(`× ${f.toLocaleString("de-DE", { minimumFractionDigits: 2 })}`, f)));
+      sel.value = String(g.faktoren[key]);
+      zeile.append(n, sel);
+      return zeile;
+    }));
+    punkteAnzahlZeigen();
+    einstAllesZeigen();
+    $("dlg-einst").showModal();
+  }
+  function punkteAnzahlZeigen() {
+    const n = wege.filter((w) => w.gps).length;
+    $("gps-punkte-anzahl").textContent = n === 1 ? "1 Weg mit Punkten" : `${n} Wege mit Punkten`;
+    $("gps-punkte-loeschen").disabled = !n;
+    $("gps-punkte-loeschen").classList.remove("frage"); $("gps-punkte-loeschen").textContent = "Löschen";
+  }
+  $("gps-an").addEventListener("change", () => gpsSetzen({ an: $("gps-an").checked }));
+  $("gps-genau").addEventListener("change", () => gpsSetzen({ genauigkeit: Number($("gps-genau").value) }));
+  $("gps-punkte").addEventListener("change", () => gpsSetzen({ punkte: $("gps-punkte").checked }));
+  $("gps-faktoren").addEventListener("change", (e) => {
+    const sel = e.target.closest("select"); if (!sel) return;
+    gpsSetzen({ faktoren: { ...gpsEinst().faktoren, [sel.dataset.key]: Number(sel.value) } });
   });
+  $("gps-faktoren-reset").addEventListener("click", () => {
+    gpsSetzen({ faktoren: { ...GPS_STANDARD.faktoren } });
+    $("gps-faktoren").querySelectorAll("select").forEach((sel) => { sel.value = String(GPS_STANDARD.faktoren[sel.dataset.key]); });
+  });
+  $("gps-test").addEventListener("click", () => {
+    $("gps-test-text").hidden = false; $("gps-test-text").textContent = "Suche Standort …";
+    ortFragen("position").then((d) => {
+      if (typeof d.lat !== "number") { $("gps-test-text").textContent = d.fehler === "verweigert" ? (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.ort ? "Kein Zugriff auf den Standort. Erlauben unter iOS-Einstellungen › Wegetagebuch › Standort." : "Kein Zugriff auf den Standort. Erlaube ihn in den Browser-Einstellungen für diese Seite (iPhone: Einstellungen › Apps › Safari › Standort).") : "Kein Standort gefunden. Versuche es im Freien noch einmal."; return; }
+      const ok = Math.round(d.acc) <= gpsEinst().genauigkeit;
+      $("gps-test-text").textContent = `Standort gefunden, genau auf ±${Math.round(d.acc)} m. ${ok ? "Gut genug für die Schätzung." : "Zu ungenau, so würde keine Länge geschätzt."}`;
+      ortFragen("status").then((s2) => { $("gps-status").textContent = STATUS_TEXT[s2.status] || s2.status || "–"; });
+    });
+  });
+  let punkteFrage = null;
+  $("gps-punkte-loeschen").addEventListener("click", () => {
+    const b = $("gps-punkte-loeschen");
+    if (!b.classList.contains("frage")) {
+      b.classList.add("frage"); b.textContent = "Sicher?";
+      punkteFrage = setTimeout(punkteAnzahlZeigen, 3000);
+      return;
+    }
+    clearTimeout(punkteFrage);
+    wege.filter((w) => w.gps).forEach((w) => { const { gps, ...rest } = w; wegSichern(rest); });
+    punkteAnzahlZeigen();
+    toast("Punkte gelöscht");
+  });
+
+  // ---------- Löschen: Tage (im Kalender markiert) oder alle Wege ----------
+  // Sicherheitsabfrage: erster Tipp fragt nach, erst der zweite löscht; danach 5 s Rückgängig.
+  const anzahlText = (n) => `${n} ${n === 1 ? "Weg" : "Wege"}`;
+  function wegeLoeschen(liste, text) {
+    const ids = new Set(liste.map((w) => w.id)), vorherTag = tag;
+    wege = wege.filter((w) => !ids.has(w.id));
+    auswahl.clear();
+    cacheSchreiben(); render(); auswahlZeigen();
+    if (store.mode === "db") {
+      (async () => { for (const id of ids) await wegeSammlung().doc(id).delete(); })().catch(() => toast("Löschen im Konto hat nicht geklappt."));
+    }
+    // Zurück zur Wegeliste, damit „Rückgängig“ nicht hinter der Seite liegt
+    ["dlg-kal", "dlg-einst"].forEach((id) => { if ($(id).open) $(id).close(); });
+    toast(text, { text: "Rückgängig", fn: () => { tag = vorherTag; liste.forEach(wegSichern); } });
+  }
+  function frageZuruecksetzen() {
+    [["kal-loe", "Löschen"], ["einst-alles", "Alles löschen"]].forEach(([id, t]) => { $(id).classList.remove("frage"); $(id).textContent = t; });
+  }
+  let loeFrage = null;
+  function zweimalTippen(b, frage, fn) {
+    if (!b.classList.contains("frage")) {
+      frageZuruecksetzen();
+      b.classList.add("frage"); b.textContent = frage;
+      clearTimeout(loeFrage); loeFrage = setTimeout(frageZuruecksetzen, 4000);
+      return;
+    }
+    clearTimeout(loeFrage);
+    fn();
+  }
+  window.addEventListener("wege-geaendert", () => {
+    if ($("dlg-einst").open) einstAllesZeigen();
+    if ($("dlg-kal").open) { for (const t of [...kalMarkiert]) if (!wegeAm(t).length) kalMarkiert.delete(t); kalenderZeichnen(); }
+  });
+  function einstAllesZeigen() {
+    $("einst-alles-text").textContent = wege.length ? `Alle ${anzahlText(wege.length)}` : "Keine Wege gespeichert";
+    $("einst-alles").disabled = !wege.length;
+    frageZuruecksetzen();
+  }
+  $("einst-alles").addEventListener("click", () => {
+    if (!wege.length) return;
+    zweimalTippen($("einst-alles"), "Wirklich alles?", () => wegeLoeschen([...wege], `Alle ${anzahlText(wege.length)} gelöscht`));
+  });
+
+  // Menü: Kacheln öffnen die Seiten
+  $("btn-menue").addEventListener("click", () => { $("dlg-menue").showModal(); if (document.activeElement) document.activeElement.blur(); });
+  $("dlg-menue").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-ziel]"); if (!b) return;
+    $("dlg-menue").close();
+    if (b.dataset.ziel === "dlg-exp") exportOeffnen(); else if (b.dataset.ziel === "dlg-einst") einstOeffnen(); else $(b.dataset.ziel).showModal();
+  });
+  document.querySelectorAll(".seite-dlg [data-schliessen]").forEach((b) => b.addEventListener("click", () => b.closest("dialog").close()));
   $("offen-hinweis").addEventListener("click", () => {
     const erster = offeneWege()[0];
     if (!erster) return;
@@ -870,7 +1580,7 @@ legend { padding: 0; margin-bottom: 8px; }
   }
 
   // Wegelänge: feste, logische Stufen in Metern
-  const LAENGEN = [100, 200, 300, 400, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 7500, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 75000, 100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000];
+  const LAENGEN = [100, 250, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 7500, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 75000, 100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000];
   const MAX_ETAPPEN = 8;
 
   // Auswahlliste: leerer Eintrag, bekannte Werte, "+ Neu" zum Eintippen
@@ -887,7 +1597,7 @@ legend { padding: 0; margin-bottom: 8px; }
   const GRIFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
 
   // Feste Verkehrsmittel mit Piktogramm. Ältere eigene Einträge bleiben als Textfeld sichtbar, bis man eine Kachel wählt.
-  const VM_KNOEPFE = [["zu Fuß", "fuss"], ["Fahrrad", "rad"], ["Tram", "tram"], ["Bus", "bus"], ["Zug", "zug"], ["Auto", "auto"], ["Taxi", "taxi"], ["Moped", "moped"]];
+  const VM_KNOEPFE = [["zu Fuß", "fuss"], ["Fahrrad", "rad"], ["Tram", "tram"], ["Zug", "zug"], ["Bus", "bus"], ["Taxi", "taxi"], ["Moped", "moped"], ["Auto", "auto"]];
 
   function legsZeichnen() {
     const box = $("legs");
@@ -956,15 +1666,16 @@ legend { padding: 0; margin-bottom: 8px; }
       f2.hidden = !sonstige;
       wahlZeigen();
 
-      // Wegelänge: Auswahlliste mit festen Stufen (alte, krumme Werte bleiben wählbar)
-      const f3 = document.createElement("label"); f3.className = "field";
-      const s3 = document.createElement("span"); s3.textContent = "Wegelänge";
-      const lenSel = document.createElement("select"); lenSel.id = `f-len-${i}`;
+      // Wegelänge: Auswahl-Pille in der Kopfzeile mit festen Stufen (alte, krumme Werte bleiben wählbar)
+      const lenSel = document.createElement("select"); lenSel.id = `f-len-${i}`; lenSel.className = "laenge";
+      lenSel.setAttribute("aria-label", `Wegelänge Verkehrsmittel ${i + 1}`);
       const stufen = leg.m && !LAENGEN.includes(leg.m) ? [...LAENGEN, leg.m].sort((x, y) => x - y) : LAENGEN;
-      lenSel.replaceChildren(new Option("Bitte wählen", ""), ...stufen.map((m) => new Option(laengeLang(m), m)));
+      lenSel.replaceChildren(new Option("Länge ▾", ""), ...stufen.map((m) => new Option(laengeLang(m), m)));
       lenSel.value = leg.m ? String(leg.m) : "";
-      lenSel.addEventListener("change", () => { leg.m = Number(lenSel.value) || null; pruefen(); });
-      f3.append(s3, lenSel);
+      const lenZeigen = () => lenSel.classList.toggle("leer", !lenSel.value);
+      lenZeigen();
+      lenSel.addEventListener("change", () => { leg.m = Number(lenSel.value) || null; lenZeigen(); pruefen(); });
+      kopf.insertBefore(lenSel, muell);
 
       wahl.addEventListener("click", (e) => {
         const k = e.target.closest(".vm-knopf"); if (!k) return;
@@ -972,15 +1683,22 @@ legend { padding: 0; margin-bottom: 8px; }
         f2.hidden = true;
         leg.vm = k.dataset.vm;
         wahlZeigen(); piktoZeigen(); pruefen();
+        if (!leg.m) laengeOeffnen(lenSel);   // Länge gleich hinterher abfragen
       });
       frei.addEventListener("input", () => { leg.vm = frei.value.trim(); piktoZeigen(); pruefen(); });
 
-      grp.append(wahl, f2, f3);
+      grp.append(wahl, f2);
       block.append(kopf, grp);
       box.append(block);
 
       etappeZiehen(griff, block, i);
     });
+  }
+
+  // Öffnet die Auswahlliste direkt (showPicker, sonst Fokus: auf dem iPhone erscheint dann das Rad).
+  function laengeOeffnen(sel) {
+    try { if (sel.showPicker) { sel.showPicker(); return; } } catch (_) {}
+    sel.focus();
   }
 
   // Griff ziehen: der Block folgt dem Finger und tauscht mit dem Nachbarn, sobald er über dessen Mitte ist.
@@ -1070,9 +1788,10 @@ legend { padding: 0; margin-bottom: 8px; }
     for (const id of ["f-start", "f-dauer", "f-ankunft"]) $(id).classList.toggle("leer", !$(id).value);
     markiere($("f-zweck").closest(".field"), !zweckWert());
     markiere($("f-vm-0"), !l0.vm);
-    markiere($("f-len-0") && $("f-len-0").closest(".field"), !lenOk);
+    markiere($("f-len-0"), !lenOk);
     $("f-plus1").hidden = !($("f-start").value && $("f-ankunft").value && $("f-ankunft").value.slice(0, 5) < $("f-start").value.slice(0, 5));
     $("add-leg").hidden = legs.length >= MAX_ETAPPEN || !legs[legs.length - 1].vm;
+    $("fuss-plus").hidden = legs.length >= MAX_ETAPPEN;
     return ok;
   }
 
@@ -1081,7 +1800,7 @@ legend { padding: 0; margin-bottom: 8px; }
     rotMarkieren = !!w && !vollstaendig(w);
     const nr = w ? wegeAm(w.datum).findIndex((x) => x.id === w.id) + 1 : 0;
     $("weg-title").textContent = w ? `Weg ${nr}` : "Neuer Weg";
-    const v = w || { datum: tag, start: "", ankunft: uhrzeit(new Date()) };
+    const v = w || { datum: tag, start: "", ankunft: "" };
     $("f-datum").value = v.datum;
     $("f-start").value = v.start || "";
     $("f-ankunft").value = v.ankunft || "";
@@ -1090,12 +1809,14 @@ legend { padding: 0; margin-bottom: 8px; }
     zeitBerechnen();
     // Beim Bearbeiten bleiben Start und Dauer fest: Startzeit ändern verschiebt die Ankunft um die Dauer.
     if (v.start && v.ankunft) { zuletzt = ["start", "dauer"]; zeitBerechnen(); }
+    // Nicht berechnete Dauer steht auf 00:00, damit das Rad dort beginnt; sie zählt erst, wenn man sie einstellt.
+    if (!$("f-dauer").value) $("f-dauer").value = "00:00";
     const zwecke = zweckListe();
     optionen($("f-zweck"), zwecke, "Bitte wählen", w ? w.zweck : "");
     $("f-zweck-frei").value = "";
     $("f-zweck-frei-row").hidden = $("f-zweck").value !== ANDERE;
     legs = w && w.etappen && w.etappen.length
-      ? w.etappen.map((e) => ({ vm: e.vm, m: e.m || null }))
+      ? w.etappen.map((e) => ({ ...e, m: e.m || null }))   // weitere Angaben (z. B. Umstiegszeit „ab“) bleiben erhalten
       : [neueEtappe()];
     legsZeichnen();
     $("weg-confirm").hidden = true;
@@ -1103,6 +1824,7 @@ legend { padding: 0; margin-bottom: 8px; }
     $("weg-save").hidden = false;
     pruefen();
     $("dlg-weg").showModal();
+    if (document.activeElement) document.activeElement.blur();   // kein Fokusrahmen um „Abbrechen“
   }
 
   $("f-zweck").addEventListener("change", () => {
@@ -1121,6 +1843,23 @@ legend { padding: 0; margin-bottom: 8px; }
     $("legs").lastElementChild.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $("weg-cancel").addEventListener("click", () => $("dlg-weg").close());
+  // ＋250 m zu Fuß davor/danach (vergessener Fußweg zur Haltestelle); eine leere Etappe wird ersetzt
+  function fussEinfuegen(vorne) {
+    if (legs.length >= MAX_ETAPPEN) return;
+    const fuss = { vm: "zu Fuß", m: 250 };
+    if (legs.length === 1 && !legs[0].vm && !legs[0].m) legs = [fuss];
+    else if (vorne) legs.unshift(fuss); else legs.push(fuss);
+    legsZeichnen(); pruefen();
+    const ziel = vorne ? $("legs").firstElementChild : $("legs").lastElementChild;
+    if (ziel) ziel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  $("fuss-davor").addEventListener("click", () => fussEinfuegen(true));
+  $("fuss-danach").addEventListener("click", () => fussEinfuegen(false));
+  ["fuss-davor-ic", "fuss-danach-ic"].forEach((id) => {
+    const p = PIKTO.fuss;
+    $(id).style.setProperty("--c", p.farbe);
+    $(id).innerHTML = `<span class="ic">${piktoSvg(p)}</span><small>250 m</small>`;
+  });
 
   // Zurückwischen: Formular und Export folgen dem Finger nach rechts; weit genug oder schnell genug schließt wie „Abbrechen“.
   function zurueckWischen(dlg) {
@@ -1160,6 +1899,7 @@ legend { padding: 0; margin-bottom: 8px; }
   }
   zurueckWischen($("dlg-weg"));
   zurueckWischen($("dlg-exp"));
+  ["dlg-stat", "dlg-einst", "dlg-hilfe"].forEach((id) => zurueckWischen($(id)));
   // Löschen im Formular: mit Nachfrage in der unteren Leiste
   const loeschFrage = (an) => { $("weg-confirm").hidden = !an; $("weg-delete").hidden = an; $("weg-save").hidden = an; };
   $("weg-delete").addEventListener("click", () => loeschFrage(true));
@@ -1174,13 +1914,15 @@ legend { padding: 0; margin-bottom: 8px; }
     ev.preventDefault();
     if (!pruefen()) return;
     const alt = editId ? wege.find((w) => w.id === editId) : null;
+    // Felder, die das Formular nicht zeigt (GPS-Punkte usw.), vom bisherigen Weg übernehmen
     const w = {
+      ...(alt || {}),
       id: editId || neueId(),
       datum: $("f-datum").value,
       start: $("f-start").value.slice(0, 5),
       ankunft: $("f-ankunft").value.slice(0, 5),
       zweck: zweckWert(),
-      etappen: legs.filter((l) => l.vm).map((l) => ({ vm: l.vm, m: l.m || null })),
+      etappen: legs.filter((l) => l.vm).map((l) => ({ ...l, vm: l.vm, m: l.m || null })),
       erstellt: alt ? alt.erstellt : Date.now(),
     };
     w.dauer = dauerVon(w);
@@ -1243,9 +1985,6 @@ legend { padding: 0; margin-bottom: 8px; }
     const t = e.touches[0];
     const versatz = abfangen();
     zug = { x: t.clientX - versatz, y: t.clientY, achse: versatz ? "x" : null, dx: versatz, spur: [[t.clientX, e.timeStamp]] };
-    // Nachbarseiten auf Höhe des sichtbaren Ausschnitts bringen, falls nach unten gescrollt
-    const ver = Math.max(0, window.scrollY - pager.offsetTop);
-    track.querySelectorAll(".neben").forEach((n) => { n.style.transform = ver ? `translateY(${ver}px)` : ""; });
   }, { passive: true });
   pager.addEventListener("touchmove", (e) => {
     if (!zug) return;
@@ -1312,8 +2051,11 @@ legend { padding: 0; margin-bottom: 8px; }
   // ---------- Kalender ----------
   let kalMonat = null;   // "YYYY-MM"
   let kalZiel = null;   // gesetzt, wenn der Kalender ein Kopierziel wählt statt den Tag zu wechseln
+  const kalMarkiert = new Set();   // zum Löschen markierte Tage (bleiben beim Blättern erhalten)
+  let kalHalten = null, kalHaltenXY = null, kalKlickSperre = false;
   function kalenderOeffnen(ziel) {
     kalZiel = typeof ziel === "function" ? ziel : null;
+    kalMarkiert.clear();
     kalMonat = tag.slice(0, 7);
     kalenderZeichnen();
     $("dlg-kal").showModal();
@@ -1342,10 +2084,57 @@ legend { padding: 0; margin-bottom: 8px; }
         b.append(punkt);
         b.setAttribute("aria-label", `${d}., ${amTag.length} ${amTag.length === 1 ? "Weg" : "Wege"}`);
       }
-      b.addEventListener("click", () => { const f = kalZiel; kalZiel = null; $("dlg-kal").close(); if (f) f(iso); else { tag = iso; render(); } });
+      if (kalMarkiert.has(iso)) b.classList.add("markiert");
+      b.addEventListener("click", () => {
+        if (kalKlickSperre) { kalKlickSperre = false; return; }
+        if (kalMarkiert.size) { kalUmschalten(iso); return; }
+        const f = kalZiel; kalZiel = null; $("dlg-kal").close(); if (f) f(iso); else { tag = iso; render(); }
+      });
+      // Gedrückt halten (0,5 s) markiert den Tag zum Löschen – nur Tage mit Wegen, nicht beim Kopieren
+      if (amTag.length && !kalZiel) {
+        b.addEventListener("pointerdown", (e) => {
+          clearTimeout(kalHalten); kalHaltenXY = [e.clientX, e.clientY];
+          kalHalten = setTimeout(() => {
+            kalHalten = null;
+            if (!kalMarkiert.has(iso)) kalUmschalten(iso);
+            kalKlickSperre = true;
+            if (navigator.vibrate) navigator.vibrate(15);
+          }, 500);
+        });
+        b.addEventListener("pointermove", (e) => {
+          if (kalHalten && kalHaltenXY && Math.hypot(e.clientX - kalHaltenXY[0], e.clientY - kalHaltenXY[1]) > 10) { clearTimeout(kalHalten); kalHalten = null; }
+        });
+        ["pointerup", "pointercancel", "pointerleave"].forEach((t) => b.addEventListener(t, () => { clearTimeout(kalHalten); kalHalten = null; }));
+        b.addEventListener("contextmenu", (e) => e.preventDefault());
+      }
       grid.append(b);
     }
+    grid.classList.toggle("markieren", kalMarkiert.size > 0);
+    kalFussZeigen();
   }
+  function kalUmschalten(iso) {
+    if (kalMarkiert.has(iso)) kalMarkiert.delete(iso);
+    else if (wegeAm(iso).length) kalMarkiert.add(iso);
+    kalenderZeichnen();
+  }
+  function kalFussZeigen() {
+    const n = wege.filter((w) => kalMarkiert.has(w.datum)).length;
+    $("kal-fuss").hidden = !kalMarkiert.size;
+    $("kal-info").textContent = `${kalMarkiert.size} ${kalMarkiert.size === 1 ? "Tag" : "Tage"} · ${anzahlText(n)}`;
+    frageZuruecksetzen();
+  }
+  // Nach dem Halten wird der Kalender neu gezeichnet; kommt der Klick des Loslassens dann nicht an, darf die Sperre nicht hängen bleiben
+  $("dlg-kal").addEventListener("pointerdown", () => { kalKlickSperre = false; }, true);
+  $("kal-abbr").addEventListener("click", () => { kalMarkiert.clear(); kalenderZeichnen(); });
+  $("kal-loe").addEventListener("click", () => {
+    const liste = wege.filter((w) => kalMarkiert.has(w.datum));
+    if (!liste.length) return;
+    zweimalTippen($("kal-loe"), `${anzahlText(liste.length)} löschen?`, () => {
+      const n = kalMarkiert.size;
+      kalMarkiert.clear();
+      wegeLoeschen(liste, `${n} ${n === 1 ? "Tag" : "Tage"} gelöscht (${anzahlText(liste.length)})`);
+    });
+  });
   function kalBlaettern(schritt) {
     const [y, m] = kalMonat.split("-").map(Number);
     const d = new Date(y, m - 1 + schritt, 1);
@@ -1366,7 +2155,7 @@ legend { padding: 0; margin-bottom: 8px; }
   });
   // Tippen neben den Kalender schließt ihn
   $("dlg-kal").addEventListener("click", (e) => { if (e.target === $("dlg-kal")) $("dlg-kal").close(); });
-  $("dlg-kal").addEventListener("close", () => { kalZiel = null; });
+  $("dlg-kal").addEventListener("close", () => { kalZiel = null; kalMarkiert.clear(); clearTimeout(kalHalten); kalHalten = null; kalKlickSperre = false; });
   $("fab").addEventListener("click", () => formOeffnen(null));
 
   // ---------- Excel (.xlsx) ohne Bibliothek: XML-Teile + ZIP ohne Kompression ----------
@@ -1581,7 +2370,22 @@ legend { padding: 0; margin-bottom: 8px; }
     return new Blob([bytes], { type: "application/pdf" });
   }
 
+  // In der iPhone-App (Xcode-Hülle) übernimmt das native Teilen-Menü die Datei.
+  function alsBase64(blob) {
+    return new Promise((ok, fehler) => {
+      const r = new FileReader();
+      r.onload = () => ok(String(r.result).split(",")[1] || "");
+      r.onerror = fehler;
+      r.readAsDataURL(blob);
+    });
+  }
   async function anbieten(dateiname, blob) {
+    const nativ = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.datei;
+    if (nativ) {
+      try { nativ.postMessage({ name: dateiname, daten: await alsBase64(blob) }); }
+      catch (_) { toast("Speichern ist hier gerade nicht möglich."); }
+      return;
+    }
     const c = window.claude;
     const dl = c && typeof c.use === "function" ? await c.use("downloads") : null;
     if (dl) {
@@ -1692,7 +2496,7 @@ legend { padding: 0; margin-bottom: 8px; }
     anbieten(expDateiname(daten, o.format), blob);
   }
 
-  $("btn-export").addEventListener("click", () => {
+  function exportOeffnen() {
     const tage = alleTage();
     expTage = new Set(tage.includes(tag) ? [tag] : tage.slice(0, 1));
     warnungZeigen(false);
@@ -1700,7 +2504,7 @@ legend { padding: 0; margin-bottom: 8px; }
     expZeigen();
     speicherHinweis();
     $("dlg-exp").showModal();
-  });
+  }
   $("exp-close").addEventListener("click", () => $("dlg-exp").close());
   $("exp-alle").addEventListener("click", () => { expTage = new Set(alleTage()); expTageZeichnen(); expZeigen(); });
   $("exp-keine").addEventListener("click", () => { expTage = new Set(); expTageZeichnen(); expZeigen(); });
@@ -1755,6 +2559,8 @@ legend { padding: 0; margin-bottom: 8px; }
   speicherHinweis();
   render();
   speicherVerbinden();
+  window.liveAbholen();
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) window.liveAbholen(); });
   // Außerhalb von Claude den Browser bitten, die Daten nicht automatisch zu löschen.
   if (!window.claude && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 })();

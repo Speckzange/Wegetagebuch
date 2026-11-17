@@ -1,5 +1,5 @@
 // Netz zuerst (damit Updates sofort ankommen), ohne Netz die gespeicherte Kopie.
-const CACHE = "wegetagebuch-v1";
+const CACHE = "wegetagebuch-v2";
 const DATEIEN = ["./", "index.html", "manifest.webmanifest", "apple-touch-icon.png", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(DATEIEN))); self.skipWaiting(); });
 self.addEventListener("activate", (e) => { e.waitUntil(self.clients.claim()); });
